@@ -1,0 +1,212 @@
+/* frameflow: the fixed look. White page, a thin blue line on top, Plus Jakarta Sans, one blue accent word.
+   Approved by the owner on 2026-10-06 (B2 storyboard, background option 3, brand option C).
+   Change colours, fonts or sizes only with his yes. Positions come from layout.js. */
+
+@font-face { font-family: "PJS"; src: url("fonts/PlusJakartaSans-Regular.ttf") format("truetype"); font-weight: 400; }
+@font-face { font-family: "PJS"; src: url("fonts/PlusJakartaSans-SemiBold.ttf") format("truetype"); font-weight: 600; }
+@font-face { font-family: "PJS"; src: url("fonts/PlusJakartaSans-Bold.ttf") format("truetype"); font-weight: 700; }
+@font-face { font-family: "PJS"; src: url("fonts/PlusJakartaSans-ExtraBold.ttf") format("truetype"); font-weight: 800; }
+@font-face { font-family: "Naskh"; src: url("fonts/NotoNaskhArabic-Regular.ttf") format("truetype"); font-weight: 400 600; }
+@font-face { font-family: "Naskh"; src: url("fonts/NotoNaskhArabic-Bold.ttf") format("truetype"); font-weight: 700 800; }
+
+:root {
+  --ink: #14161f;
+  --mute: #6b7080;
+  --blue: #3d5afe;
+  --blue-soft: #eef1ff;
+  --line: #e3e6ef;
+  --sketch: #eef0f6;
+  --frame: #c9d1ff;
+  --red: #e5484d;
+  --red-line: #f3b9bb;
+  --red-soft: #fdecec;
+  --green: #2f9e5a;
+  --green-soft: #e7f6ec;
+  --gold: #b7791f;
+  --gold-soft: #fff8e6;
+  --font: "PJS", "Naskh", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: var(--font); color: var(--ink); background: #e9ebf1; }
+html[dir="rtl"] { --font: "Naskh", "PJS", system-ui, sans-serif; }
+
+/* ---------- pages ---------- */
+
+.book { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 24px 0 48px; }
+.page { position: relative; width: 793px; height: 1122px; background: #fff; overflow: hidden;
+  box-shadow: 0 6px 24px rgba(20, 22, 31, .14); }
+.page > * { position: absolute; }
+.topline { left: 0 !important; top: 0; width: 100%; height: 8px; background: var(--blue); }
+
+.print-hint { max-width: 793px; margin: 20px auto 0; padding: 10px 14px; border-radius: 10px;
+  background: #fff; color: var(--mute); font-size: 13px; text-align: center; }
+
+@page { size: A4; margin: 0; }
+@media print {
+  body { background: #fff; }
+  .print-hint { display: none; }
+  .book { display: block; padding: 0; }
+  .page { box-shadow: none; break-after: page; page-break-after: always; }
+  .page:last-child { break-after: auto; page-break-after: auto; }
+}
+
+/* ---------- words ---------- */
+
+.label { font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
+html[dir="rtl"] .label { letter-spacing: 0; font-size: 12px; }
+.accent { color: var(--blue); }
+.brand { font-size: 15px; font-weight: 700; }
+
+.hero { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; overflow: hidden; }
+.hero .label { margin-bottom: 10px; }
+.title { font-size: 42px; font-weight: 800; line-height: 1.12; letter-spacing: -.02em; }
+.about { max-width: 600px; margin-top: 14px; font-size: 16px; line-height: 1.5; color: var(--mute); }
+html[dir="rtl"] .title { letter-spacing: 0; line-height: 1.4; }
+
+.pill { display: inline-flex; align-items: center; margin-top: 22px; padding: 0 14px; border-radius: 15px;
+  font-size: 13px; font-weight: 700; line-height: 30px; }
+.pill.approved { background: var(--green-soft); color: var(--green); }
+.pill.approved::before { content: ""; width: 5px; height: 10px; margin: -3px 9px 0 2px; border: solid var(--green);
+  border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.pill.draft { background: var(--gold-soft); color: var(--gold); }
+
+.contents { list-style: none; overflow: hidden; }
+.contents li { display: flex; align-items: baseline; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.contents.tight li { padding: 5px 0; }
+.contents .n { width: 22px; font-weight: 800; color: var(--blue); }
+.contents .t { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+.contents .c, .contents .pg { color: var(--mute); font-size: 12px; white-space: nowrap; }
+
+.meta { display: grid; grid-template-columns: 110px 1fr; row-gap: 6px; font-size: 13px; overflow: hidden; align-content: end; }
+.meta dt { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); line-height: 19px; }
+html[dir="rtl"] .meta dt { letter-spacing: 0; font-size: 11px; }
+
+.story-title { font-size: 26px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; line-height: 48px; }
+.summary { font-size: 13px; line-height: 1.45; color: var(--mute); overflow: hidden; }
+html[dir="rtl"] .story-title { letter-spacing: 0; }
+
+.footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line);
+  font-size: 9px; color: var(--mute); padding-top: 6px; }
+.credit { font-size: 8px; color: #9aa0b0; text-align: center; }
+
+/* ---------- captions ---------- */
+
+.cap, .etext { overflow: hidden; }
+.cap .name { font-size: 12.5px; font-weight: 700; line-height: 17px; }
+.cap .text { font-size: 11.5px; line-height: 15.5px; color: #3b3f4d; margin-top: 2px; }
+.etext .name { font-size: 11px; font-weight: 700; line-height: 15px; color: var(--red); }
+.etext .text { font-size: 10.5px; line-height: 14px; color: #3b3f4d; margin-top: 1px; }
+.note { font-size: 10.5px; font-weight: 700; line-height: 15px; margin-top: 3px; }
+.note.jump { color: var(--blue); }
+.note.end { color: var(--ink); }
+.note.end::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 2px; background: var(--ink);
+  margin-inline-end: 5px; vertical-align: 0; }
+html[dir="rtl"] .cap .name { line-height: 20px; }
+html[dir="rtl"] .cap .text { line-height: 18px; }
+html[dir="rtl"] .etext .text { line-height: 16px; }
+
+/* ---------- lines ---------- */
+
+.links { left: 0; top: 0; pointer-events: none; overflow: visible; }
+.link { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.link.next, .link.turn { stroke: var(--blue); stroke-width: 1.8; }
+.link.error, .link.error-trunk { stroke: var(--red); stroke-width: 1.4; stroke-dasharray: 4 3; stroke-linecap: butt; }
+.head-blue { fill: var(--blue); }
+.head-red { fill: var(--red); }
+
+/* ---------- frames ---------- */
+
+.frame { background: #fff; border: 2px solid var(--frame); }
+.frame .screen { position: absolute; overflow: hidden; background: #fff; }
+.frame .num { position: absolute; top: -11px; left: -11px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--blue); color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+html[dir="rtl"] .frame .num { left: auto; right: -11px; }
+
+.frame.phone { border-radius: 20px; box-shadow: 0 10px 22px rgba(61, 90, 254, .10); }
+.frame.phone::before { content: ""; position: absolute; top: 8px; left: 50%; width: 30%; height: 5px; margin-left: -15%;
+  border-radius: 3px; background: var(--line); }
+.frame.phone .screen { inset: 20px 8px 10px 8px; border-radius: 4px; }
+
+.frame.tablet { border-radius: 16px; box-shadow: 0 10px 22px rgba(61, 90, 254, .10); }
+.frame.tablet::before { content: ""; position: absolute; top: 6px; left: 50%; width: 6px; height: 6px; margin-left: -3px;
+  border-radius: 50%; background: var(--line); }
+.frame.tablet .screen { inset: 16px 9px 12px 9px; border-radius: 3px; }
+
+.frame.desktop, .frame.website { border-radius: 9px; box-shadow: 0 10px 22px rgba(61, 90, 254, .10); }
+.frame.desktop::before, .frame.website::before { content: ""; position: absolute; top: 7px; left: 9px; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--line); box-shadow: 10px 0 0 var(--line), 20px 0 0 var(--line); }
+.frame.desktop .screen { inset: 20px 6px 6px 6px; border-radius: 3px; }
+.frame.website::after { content: ""; position: absolute; top: 5px; left: 42px; right: 12px; height: 10px; border-radius: 5px; background: var(--sketch); }
+.frame.website .screen { inset: 22px 6px 6px 6px; border-radius: 3px; }
+html[dir="rtl"] .frame.desktop::before, html[dir="rtl"] .frame.website::before { left: auto; right: 29px; }
+html[dir="rtl"] .frame.website::after { left: 12px; right: 42px; }
+
+.frame.err { border: 2px dashed var(--red-line); box-shadow: none; }
+.frame.small.phone { border-radius: 12px; }
+.frame.small.phone::before { top: 5px; height: 3px; }
+.frame.small.phone .screen { inset: 12px 5px 6px 5px; }
+.frame.small.tablet .screen { inset: 10px 6px 8px 6px; }
+.frame.small.desktop .screen, .frame.small.website .screen { inset: 18px 5px 5px 5px; }
+.frame.small.website::after { left: 38px; height: 8px; }
+
+/* A website's phone version: a small phone over the browser's lower corner (placed by layout.js). */
+.frame.mini { border-width: 1.5px; border-radius: 11px; box-shadow: 0 6px 14px rgba(61, 90, 254, .14); }
+.frame.mini::before { top: 4px; height: 3px; }
+.frame.mini .screen { inset: 11px 4px 5px 4px; }
+
+/* Real screenshots sit over the sketch; a missing one leaves the sketch and says so. */
+/* The whole screenshot, never cropped or stretched; any room left in the frame shows the light sketch colour. */
+.shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center top; background: var(--sketch); }
+.missing { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 3px 4px; border-radius: 4px;
+  background: var(--red-soft); color: var(--red); font-size: 8px; font-weight: 700; text-align: center; line-height: 1.2; }
+.frame.mini .missing { font-size: 6px; left: 3px; right: 3px; bottom: 3px; padding: 2px; }
+
+/* ---------- sketches: grey blocks and one blue button, in proportion to any frame ---------- */
+
+.sketch { position: absolute; inset: 9% 9%; display: flex; flex-direction: column; gap: 6%; }
+.sketch .b { background: var(--sketch); border-radius: 3px; flex: none; }
+.sketch .field { height: 9%; }
+.sketch .button { height: 9%; background: var(--blue); border-radius: 4px; margin-top: auto; }
+.sketch .row { height: 12%; position: relative; margin-inline-start: 22%; }
+.sketch .row::before { content: ""; position: absolute; inset-inline-start: -28%; top: 0; width: 20%; height: 100%; border-radius: 50%; background: var(--sketch); }
+.sketch .line { height: 5%; }
+.sketch .line.short { width: 62%; }
+.sketch .picture { height: 40%; }
+.sketch.form { justify-content: flex-start; padding-top: 10%; }
+.sketch.form .button { margin-top: 8%; }
+.sketch.grid { flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 5%; }
+.sketch.grid .banner { width: 100%; height: 26%; }
+.sketch.grid .card { width: 47.5%; height: 26%; }
+.sketch.done, .sketch.error { align-items: center; justify-content: center; }
+.sketch .tick, .sketch .alert { width: 42%; aspect-ratio: 1; border-radius: 50%; background: var(--green-soft); position: relative; }
+/* The tick is drawn, not typed, so it looks the same on every computer (the font has no ✓). */
+.sketch .tick::after { content: ""; position: absolute; left: 37%; top: 22%; width: 22%; height: 40%; border: solid var(--green);
+  border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.sketch .alert { background: var(--red-soft); }
+.sketch .alert::after { content: "!"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: var(--red); font-weight: 800; font-size: 18px; }
+.sketch.done .line { width: 60%; }
+.sketch.error .button { width: 70%; margin-top: 10%; height: 10%; }
+.frame.small .sketch .alert::after { font-size: 13px; }
+
+/* Wide frames: the same sketches, laid out for a wide screen. */
+.frame.desktop .sketch.grid .card, .frame.website .sketch.grid .card { width: 30%; height: 30%; }
+.frame.desktop .sketch.grid .banner, .frame.website .sketch.grid .banner { height: 30%; }
+.frame.desktop .sketch .tick, .frame.website .sketch .tick, .frame.desktop .sketch .alert, .frame.website .sketch .alert { width: 20%; }
+.frame.desktop .sketch.form, .frame.website .sketch.form { padding: 4% 26% 0; }
+.frame.desktop .sketch .row, .frame.website .sketch .row { margin-inline-start: 8%; }
+.frame.desktop .sketch .row::before, .frame.website .sketch .row::before { inset-inline-start: -10%; width: 7%; }
+.frame.desktop .sketch .picture, .frame.website .sketch .picture { height: 46%; }
+.frame.desktop .sketch .button, .frame.website .sketch .button { width: 30%; }
+.frame.desktop .sketch.form .button, .frame.website .sketch.form .button { width: 100%; }
+
+/* ---------- when the page refuses ---------- */
+
+.problems { max-width: 720px; margin: 40px auto; padding: 32px 36px; background: #fff; border-radius: 14px;
+  border-top: 6px solid var(--red); font-family: var(--font); }
+.problems h1 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.problems p { color: var(--mute); font-size: 14px; margin-bottom: 18px; }
+.problems ol { padding-left: 22px; font-size: 14px; line-height: 1.55; }
+.problems li { margin-bottom: 6px; }

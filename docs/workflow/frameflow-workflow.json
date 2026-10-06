@@ -1,0 +1,90 @@
+{
+  "project": {
+    "name": "frameflow Skill",
+    "accent": "frameflow",
+    "client": "Everyone (public skill)",
+    "summary": "frameflow turns an app idea into a storyboard of its screens: numbered frames left to right, a caption under each, and what happens when something goes wrong. The client approves it before building, and after building it is updated with real screenshots. It works on any computer with a browser, with nothing to install.",
+    "actors": [
+      {"name": "Developer", "role": "Uses the skill for a project and talks with the client."},
+      {"name": "AI", "role": "Asks the questions, fills the fixed template and saves the files."},
+      {"name": "Workflow skill", "role": "workflow-project: draws how the whole project works, if installed."},
+      {"name": "Client", "role": "Approves the storyboard or asks for changes."}
+    ],
+    "assumptions": [
+      "It can also start from workflow-project, which offers it once when a workflow with screens is ready.",
+      "English by default; Arabic right to left when the developer asks.",
+      "Every storyboard is also saved as a text copy for the AI, without asking.",
+      "The AI never installs anything without the developer's yes, and never asks twice."
+    ],
+    "open_questions": []
+  },
+  "parts": [
+    {
+      "title": "Start the project",
+      "summary": "Learns the kind of project and whether a workflow already exists.",
+      "lanes": ["Developer", "AI", "Workflow skill"],
+      "nodes": [
+        {"id": "start", "type": "start", "lane": "Developer", "title": "Wants the app flow"},
+        {"id": "kind", "type": "step", "lane": "AI", "title": "Asks the project kind", "detail": "phone, tablet, desktop, website", "result": "The frame shape"},
+        {"id": "has", "type": "decision", "lane": "AI", "title": "Has a workflow?",
+         "branches": [{"label": "Yes", "to": "read"}, {"label": "No", "to": "rec"}]},
+        {"id": "rec", "type": "step", "lane": "AI", "title": "Recommends the workflow skill", "detail": "asked once only", "result": "A suggestion"},
+        {"id": "inst", "type": "decision", "lane": "Developer", "title": "Install it?",
+         "branches": [{"label": "Yes", "to": "wf"}, {"label": "No", "to": "own"}]},
+        {"id": "wf", "type": "step", "lane": "Workflow skill", "title": "Draws the workflow", "detail": "only after his yes", "result": "An approved workflow", "next": "read"},
+        {"id": "own", "type": "step", "lane": "AI", "title": "Goes on without it", "detail": "asks its own questions", "result": "No workflow needed", "next": "done"},
+        {"id": "read", "type": "step", "lane": "AI", "title": "Reads the workflow", "detail": "asks only what is missing", "result": "Knows the project"},
+        {"id": "done", "type": "end", "lane": "AI", "title": "Ready for questions", "to_part": 2}
+      ]
+    },
+    {
+      "title": "Understand the screens",
+      "summary": "Small rounds of questions, then a read-back before anything is drawn.",
+      "lanes": ["Developer", "AI"],
+      "nodes": [
+        {"id": "start", "type": "start", "lane": "AI", "title": "Knows the project"},
+        {"id": "ask", "type": "step", "lane": "AI", "title": "Asks 2 or 3 questions", "detail": "users, screens, taps, errors", "result": "Questions"},
+        {"id": "ans", "type": "step", "lane": "Developer", "title": "Answers them", "result": "Answers"},
+        {"id": "enough", "type": "decision", "lane": "AI", "title": "Understood?",
+         "branches": [{"label": "Yes", "to": "back"}, {"label": "No", "to": "ask"}]},
+        {"id": "back", "type": "step", "lane": "AI", "title": "Reads the pages back", "detail": "one page per user story", "result": "The page plan"},
+        {"id": "right", "type": "decision", "lane": "Developer", "title": "Right?",
+         "branches": [{"label": "Yes", "to": "done"}, {"label": "Changes", "to": "fix"}]},
+        {"id": "fix", "type": "step", "lane": "AI", "title": "Changes the pages", "detail": "merge, split, rename", "result": "A new page plan", "next": "back"},
+        {"id": "done", "type": "end", "lane": "Developer", "title": "Plan agreed", "to_part": 3}
+      ]
+    },
+    {
+      "title": "Draw and approve",
+      "summary": "The AI fills the fixed template; the client approves it or asks for changes.",
+      "lanes": ["AI", "Developer", "Client"],
+      "nodes": [
+        {"id": "start", "type": "start", "lane": "AI", "title": "Plan agreed"},
+        {"id": "fill", "type": "step", "lane": "AI", "title": "Fills the template", "detail": "sketches in each frame", "result": "The storyboard"},
+        {"id": "save", "type": "step", "lane": "AI", "title": "Saves PDF and text copy", "detail": "version 1", "result": "Two files"},
+        {"id": "show", "type": "step", "lane": "Developer", "title": "Shows the client", "result": "A review"},
+        {"id": "ok", "type": "decision", "lane": "Client", "title": "Agrees?",
+         "branches": [{"label": "Yes", "to": "appr"}, {"label": "Changes", "to": "upd"}]},
+        {"id": "upd", "type": "step", "lane": "AI", "title": "Updates the storyboard", "detail": "next version number", "result": "A new version", "next": "show"},
+        {"id": "appr", "type": "step", "lane": "AI", "title": "Marks it approved", "detail": "with the date", "result": "Approved storyboard"},
+        {"id": "done", "type": "end", "lane": "Developer", "title": "Building can start", "to_part": 4}
+      ]
+    },
+    {
+      "title": "Update after building",
+      "summary": "The sketches are replaced with real screenshots for the handover.",
+      "lanes": ["Developer", "AI"],
+      "nodes": [
+        {"id": "start", "type": "start", "lane": "Developer", "title": "The app is built"},
+        {"id": "warn", "type": "step", "lane": "AI", "title": "Warns: use demo data", "detail": "no real names or passwords", "result": "Safe screens"},
+        {"id": "can", "type": "decision", "lane": "AI", "title": "Can take them?",
+         "branches": [{"label": "Yes", "to": "take"}, {"label": "No", "to": "drop"}]},
+        {"id": "drop", "type": "step", "lane": "Developer", "title": "Drops screenshots in", "detail": "one per screen number", "result": "A screenshot folder", "next": "fit"},
+        {"id": "take", "type": "step", "lane": "AI", "title": "Takes the screenshots", "result": "Real screens"},
+        {"id": "fit", "type": "step", "lane": "AI", "title": "Puts them in the frames", "detail": "missing ones keep sketches", "result": "Final storyboard"},
+        {"id": "hand", "type": "step", "lane": "Developer", "title": "Hands it to the client", "result": "The handover"},
+        {"id": "done", "type": "end", "lane": "Developer", "title": "Final version delivered"}
+      ]
+    }
+  ]
+}

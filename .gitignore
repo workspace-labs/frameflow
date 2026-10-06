@@ -1,0 +1,13 @@
+# Built things: the zip for the Claude app and any printed PDF are made from the source here
+dist/
+*.pdf
+
+# macOS
+.DS_Store
+
+# Node, if anyone ever adds a package (the tests need none)
+node_modules/
+
+# Environment files and secrets never enter the repository
+.env
+.env.*
