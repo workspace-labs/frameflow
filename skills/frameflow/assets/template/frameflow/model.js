@@ -4,7 +4,7 @@
 (function (root) {
   "use strict";
 
-  var VERSION = "0.1.0";
+  var VERSION = "0.1.1";
 
   var KINDS = ["phone", "tablet", "desktop", "website"];
   var LANGUAGES = ["en", "ar"];

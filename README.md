@@ -13,7 +13,7 @@ The skill is the folder [`skills/frameflow/`](skills/frameflow/): its instructio
 [`SKILL.md`](skills/frameflow/SKILL.md), and a page template that draws the storyboard in any browser.
 **Nothing to install.**
 
-**Version 0.1.0**
+**Version 0.1.1** · 64 tests · reviewed over 4 rounds by a second AI · [how it was tested](TESTING.md)
 
 ---
 
@@ -108,6 +108,12 @@ From choosing a restaurant to the order confirmed.
 ```
 
 The full shape is in [`references/storyboard-format.md`](skills/frameflow/references/storyboard-format.md).
+
+## How it was tested
+
+64 automated tests (Node.js 18, 20 and 22), 8 planted bugs all caught, and 4 rounds of independent review
+by a second AI (OpenAI Codex) that found 11 problems, all fixed before release. The full record, and what has
+not been tried yet, is in [`TESTING.md`](TESTING.md).
 
 ## Limits
 

@@ -3,6 +3,14 @@
 All notable changes to this project. The version is `VERSION` in
 `skills/frameflow/assets/template/frameflow/model.js`.
 
+## [0.1.1] - 2026-10-09
+
+### Added
+
+- `TESTING.md`: how frameflow was tested. It lists the 64 automated tests, the 8 planted bugs the tests
+  caught, the four review rounds by a second AI with all 11 findings and their fixes, and what has not been
+  tried yet. The README links to it and gives a short summary. No change to the skill itself.
+
 ## [0.1.0] - 2026-10-06
 
 The first release, built from the owner's decisions of 2026-10-06. Reviewed by Codex over four rounds and
