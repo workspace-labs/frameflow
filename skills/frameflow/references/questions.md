@@ -30,6 +30,11 @@ For a website, also ask once: *"Should each page also show its phone version?"* 
     Customize → Skills). Make the workflow, then come back here.
   - They say no → *"No problem."* Go on with your own questions. Do not ask again for this project.
 
+**Are the screens already designed and approved?** (a demo, mockups, a design file)
+- **Yes** → the frames show those designs from the first version (a picture of each screen, with demo data),
+  never grey sketches. Ask where they are if you do not know.
+- **No** → sketches until the app is built.
+
 ## Understanding the screens
 
 **3. Who uses it?** One kind of user, or several (a customer and an admin)? Each kind of user gets its own

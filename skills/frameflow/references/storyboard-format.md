@@ -95,7 +95,8 @@ It is drawn as a red dashed frame below its screen:
 
 ## Screenshots
 
-After building, real screenshots replace the sketches. Put an indented `shot:` line under the screen (or
+Pictures replace the sketches: the approved design's screens from version 1 when there is one, otherwise
+real screenshots after building. Put an indented `shot:` line under the screen (or
 under its `!` line) with the picture's path, relative to the storyboard page. The picture must be in the
 page's folder or a folder below it, with folders split by `/`. Any name a Mac and Windows both allow works
 (`1-2+home.png`, `Bob's home.png`, `home & away.png`). Refused: web links, a drive or `/` at the start, `..`,
@@ -109,8 +110,9 @@ a name ending in a space or a dot, and the characters `< > : " \ | ? * % #`.
 - Name the files by story and screen number: `1-2-home.png` is story 1, screen 2.
 - For a website with `phone-version: yes`, a `phone-shot:` line gives the phone picture.
 - A missing picture keeps its sketch, with a small "Screenshot missing" note. The page never breaks.
-- The whole picture is shown, never cropped or stretched; a picture shaped differently from the frame
-  leaves light grey room around it.
+- The whole picture is shown, never cropped or stretched. A phone frame has a modern phone's tall shape,
+  so a phone screenshot fills it; a picture shaped differently leaves light grey room around it.
+- In English, straight quote marks in the text are printed curly: `"Pay"` shows as “Pay”.
 - PNG, JPG or WebP. Use demo data: no real names, phone numbers, emails or passwords.
 
 ## Sketches

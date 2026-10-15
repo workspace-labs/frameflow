@@ -3,6 +3,28 @@
 All notable changes to this project. The version is `VERSION` in
 `skills/frameflow/assets/template/frameflow/model.js`.
 
+## [0.2.0] - 2026-10-15
+
+Three fixes the owner asked for after the Planvy app flow, where the design was approved but the storyboard
+came out as grey sketches with screens too small to read.
+
+### Changed
+
+- **An approved design comes first.** If the screens are already designed and approved, every frame shows
+  that design from version 1 (`shot:` lines with demo data). Sketches are only for projects with no
+  approved design yet. The skill now asks about it (`questions.md`).
+- **Phone frames are big enough to read.** A phone frame is now a modern phone's tall shape, two a row
+  (230 × 479 px, was three at 128 × 212), the owner's pick after comparing both sizes on his phone. A page
+  holds one row of two phones; "if it goes wrong" frames are 64 × 134.
+- **The screen fills the phone.** A phone frame holding a screenshot drops its sketch top bar, so the
+  picture fills the frame with no grey bands.
+- **Curly quotes.** In English, `"Pay"` in the text copy prints as “Pay” and `don't` as don’t.
+
+### Tests
+
+- 67 tests (was 64): a phone page holds two screens, a row with two error frames still fits a page, the
+  phone shape is tall, and the curly quotes (never in Arabic).
+
 ## [0.1.1] - 2026-10-09
 
 ### Added

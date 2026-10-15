@@ -10,7 +10,7 @@
 
   // Per kind: columns per row, the frame, and the small frame used for "if it goes wrong".
   var KIND = {
-    phone:   { cols: 3, w: 128, h: 212, ew: 56,  eh: 93 },
+    phone:   { cols: 2, w: 230, h: 479, ew: 64,  eh: 134 },  // a modern phone's tall shape, big enough to read
     tablet:  { cols: 3, w: 150, h: 200, ew: 66,  eh: 88 },
     desktop: { cols: 2, w: 280, h: 184, ew: 124, eh: 81 },
     website: { cols: 2, w: 280, h: 184, ew: 124, eh: 81 }

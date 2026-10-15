@@ -1,13 +1,15 @@
 ---
 name: frameflow
-description: "Use when someone wants an app flow: the screens a user sees and taps in a phone app, tablet app, desktop app or website, drawn as a numbered storyboard (frames left to right, a caption under each, and what happens when something goes wrong) for a client to approve. Before building it draws sketches; after building it is updated with real screenshots. Also when asked for a user flow, a screen flow or a storyboard of an app's screens, or to update one. Not for how a whole process works or who does what (that is a workflow or swimlane), and not for designing or building the screens themselves."
+description: "Use when someone wants an app flow: the screens a user sees and taps in a phone app, tablet app, desktop app or website, drawn as a numbered storyboard (frames left to right, a caption under each, and what happens when something goes wrong) for a client to approve. When the screens are already designed and approved it shows those designs from the first version; otherwise it draws sketches until the app is built, then swaps in real screenshots. Also when asked for a user flow, a screen flow or a storyboard of an app's screens, or to update one. Not for how a whole process works or who does what (that is a workflow or swimlane), and not for designing or building the screens themselves."
 ---
 
 # frameflow
 
 An app flow, drawn as a storyboard: numbered screens left to right like a comic strip, a short caption under
 each, blue arrows for the normal path, red dashed frames for what happens when something goes wrong. The
-client approves it before anything is built. After building, the sketches are swapped for real screenshots.
+client approves it before anything is built. If the screens are already designed and approved, the frames show
+those designs from the very first version; if not, they show sketches until the app is built and real
+screenshots replace them.
 
 It is two files in the project's `docs/app-flow/`: **`app-flow.md`**, the text copy (the master, which any
 agent can read), and **`storyboard.html`**, the page that draws it, plus the PDF printed from that page. A
@@ -37,6 +39,9 @@ Ask these first, as in [references/questions.md](references/questions.md):
 
 Started right after a finished workflow? You already have it: skip question 2.
 
+Then ask: **Are the screens already designed and approved?** (a demo, mockups, a design file). Already
+known from the conversation? Do not ask, use it.
+
 ## 2. Understand the screens
 
 Ask the rest of [references/questions.md](references/questions.md) in rounds of two or three: who uses it,
@@ -55,6 +60,12 @@ Write `docs/app-flow/app-flow.md` in the shape in
 [references/storyboard-format.md](references/storyboard-format.md). Save it by default, without asking: it is
 the master copy. English unless the person asks for Arabic (`- language: ar`: the whole page reads right to
 left). Start at version 1 and `status: draft`.
+
+**An approved design comes first.** When the person has an approved design, every screen gets a `shot:`
+line from version 1: a picture of that approved screen, with demo data. Take them yourself with a tool you
+already have (a browser you can drive, at the phone's real size and 2× or 3× sharp), or ask the person for
+them; save them in `docs/app-flow/screenshots/`, named by story and screen. Never leave grey sketches when an
+approved design exists. No approved design: sketches, as normal.
 
 - **A storyboard already there?** If `docs/app-flow/` already has `app-flow.md` or `storyboard.html`, read
   them first and update them. Never write over someone's file with a new one.
@@ -76,7 +87,7 @@ left). Start at version 1 and `status: draft`.
    `app-flow.md` by the line numbers it gives, copy it in again, check again. Never edit the template to
    silence a refusal.
 4. Look at the pages if you can. Does every screen match what the person said? Is every "if it goes wrong"
-   there?
+   there? With an approved design: is every frame its real screen, and can its words be read?
 
 ## 6. The client's approval
 
@@ -91,7 +102,8 @@ ask: *"Did the client agree, or do they want changes?"*
 
 ## 7. After building
 
-Offer once: *"Do you want me to update the app flow to match what was built?"* Then:
+Offer once: *"Do you want me to update the app flow to match what was built?"* (Frames that already show
+the approved design still change if what was built looks different.) Then:
 
 1. **Warn first:** use demo data on screen, never real names, phone numbers, emails or passwords.
 2. **Screenshots:** take them yourself only with a tool you already have (a browser you can drive, a
@@ -119,8 +131,8 @@ Offer once: *"Do you want me to update the app flow to match what was built?"* T
 Say these when they matter:
 
 - Up to 12 stories and 24 screens a story; up to two "if it goes wrong" frames under a screen.
-- Six screens fit on a page (three rows of two for desktop and websites, two rows of three otherwise); "if it
-  goes wrong" frames take room, so a story continues on a "part 2" page.
+- How many screens fit on a page: two big phones (one row), six tablets (two rows of three), six desktop or
+  website screens (three rows of two). A longer story continues on a "part 2" page.
 - English and Arabic only.
 - Each website screen is a browser window; `phone-version: yes` adds a small phone over its corner.
 - Never write the characters `</script>` in `app-flow.md`: they would end the page's copy early.

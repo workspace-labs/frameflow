@@ -159,6 +159,10 @@ html[dir="rtl"] .frame.website::after { left: 12px; right: 42px; }
 /* Real screenshots sit over the sketch; a missing one leaves the sketch and says so. */
 /* The whole screenshot, never cropped or stretched; any room left in the frame shows the light sketch colour. */
 .shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center top; background: var(--sketch); }
+/* A real phone screenshot already shows its own top bar, so the frame drops its sketch bar and the picture fills it. */
+.frame.phone.has-shot::before { display: none; }
+.frame.phone.has-shot .screen { inset: 5px; border-radius: 15px; }
+.frame.phone.small.has-shot .screen { inset: 4px; border-radius: 9px; }
 .missing { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 3px 4px; border-radius: 4px;
   background: var(--red-soft); color: var(--red); font-size: 8px; font-weight: 700; text-align: center; line-height: 1.2; }
 .frame.mini .missing { font-size: 6px; left: 3px; right: 3px; bottom: 3px; padding: 2px; }

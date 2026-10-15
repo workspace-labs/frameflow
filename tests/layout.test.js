@@ -172,13 +172,26 @@ test("the number badge and the frame border in frameflow.css match layout.js", (
   assert.equal(border - px(num, "left"), layout.BADGE.out, "badge left offset");
 });
 
-test("a page holds six phone screens, and the seventh starts part 2", () => {
-  const screens = Array.from({ length: 7 }, (_, i) => `${i + 1}. S${i + 1} [blank]: Sees it.`);
+test("a page holds two big phone screens, and the third starts part 2", () => {
+  const screens = Array.from({ length: 3 }, (_, i) => `${i + 1}. S${i + 1} [blank]: Sees it.`);
   const board = parse(["# A", "- kind: phone", "## Story", ...screens].join("\n")).storyboard;
   const pages = layout.plan(board).pages.filter((p) => p.type === "story");
   assert.equal(pages.length, 2);
   assert.deepEqual(pages.map((p) => [p.part, p.parts]), [[1, 2], [2, 2]]);
-  assert.equal(pages[0].rows.flatMap((r) => r.cells).length, 6);
+  assert.equal(pages[0].rows.flatMap((r) => r.cells).length, 2);
+});
+
+test("a phone row with two things that can go wrong still fits one page", () => {
+  const board = parse(["# A", "- kind: phone", "## Story", "1. S1 [blank]: Sees it.",
+    "   ! E1: Sees a problem. → 1", "   ! E2: Sees another. → end", "2. S2 [blank]: Sees it."].join("\n")).storyboard;
+  const pages = layout.plan(board).pages.filter((p) => p.type === "story");
+  assert.equal(pages.length, 1);
+  assert.ok(layout.rowHeight(layout.KIND.phone, 2) - layout.ROW_GAP <= layout.CONTENT.bottom - layout.CONTENT.top);
+});
+
+test("a phone frame has a modern phone's tall shape", () => {
+  const k = layout.KIND.phone;
+  assert.ok(k.h / k.w > 2, "taller than twice its width");
 });
 
 test("a page holds six desktop screens in three rows of two", () => {

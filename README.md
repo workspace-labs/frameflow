@@ -6,14 +6,14 @@
 
 An agent skill that draws an app's **screens as a storyboard**: numbered frames left to right like a comic
 strip, a short caption under each ("Types email and password, taps Sign in"), blue arrows for the normal
-path, and red dashed frames for what happens when something goes wrong. Sketches before you build; real
+path, and red dashed frames for what happens when something goes wrong. An approved design shows in every frame from the start; with no design yet, sketches before you build and real
 screenshots after. The client approves it before a line of code is written.
 
 The skill is the folder [`skills/frameflow/`](skills/frameflow/): its instructions,
 [`SKILL.md`](skills/frameflow/SKILL.md), and a page template that draws the storyboard in any browser.
 **Nothing to install.**
 
-**Version 0.1.1** · 64 tests · reviewed over 4 rounds by a second AI · [how it was tested](TESTING.md)
+**Version 0.2.0** · 67 tests · reviewed over 4 rounds by a second AI · [how it was tested](TESTING.md)
 
 ---
 

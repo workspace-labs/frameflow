@@ -114,7 +114,13 @@
     return n === 1 ? "1 screen" : n + " screens";
   }
 
-  var api = { WORDS: WORDS, words: words, fill: fill, day: day, screens: screens };
+  // Straight quote marks typed in the text copy are printed as curly ones in English: "Pay" → “Pay”, don't → don’t.
+  function quotes(value, language) {
+    if (!value || language === "ar") return value;
+    return String(value).replace(/"([^"]*)"/g, "\u201C$1\u201D").replace(/(\w)'(\w)/g, "$1\u2019$2");
+  }
+
+  var api = { WORDS: WORDS, words: words, fill: fill, day: day, screens: screens, quotes: quotes };
   root.Frameflow = root.Frameflow || {};
   root.Frameflow.strings = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

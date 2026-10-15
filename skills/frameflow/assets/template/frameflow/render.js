@@ -69,7 +69,7 @@
     var hero = el("div", "hero");
     hero.appendChild(text("div", "label", W.appFlow));
     hero.appendChild(accented("h1", "title", p.name));
-    if (p.about) hero.appendChild(text("p", "about", p.about));
+    if (p.about) hero.appendChild(text("p", "about", q(ctx, p.about)));
     hero.appendChild(p.status === "approved"
       ? text("div", "pill approved", F.strings.fill(W.approvedOn, { date: F.strings.day(p.approved, p.language) }))
       : text("div", "pill draft", W.draft));
@@ -154,7 +154,7 @@
 
     place(ctx, text("div", "label", label), { x: 56, y: 44, w: 681, h: 16 });
     place(ctx, fit(accented("h2", "story-title", story.title), F.strings.fill(W.fitTitle, { t: story.title }), story.line), { x: 56, y: 60, w: 681, h: 48 });
-    if (story.summary) place(ctx, fit(text("p", "summary", story.summary), F.strings.fill(W.fitSummary, { t: story.title }), story.summaryLine), { x: 56, y: 110, w: 681, h: 40 });
+    if (story.summary) place(ctx, fit(text("p", "summary", q(ctx, story.summary)), F.strings.fill(W.fitSummary, { t: story.title }), story.summaryLine), { x: 56, y: 110, w: 681, h: 40 });
 
     var svg = document.createElementNS(SVG, "svg");
     svg.setAttribute("class", "links");
@@ -187,8 +187,8 @@
     if (cell.mini) place(ctx, frame(ctx, "phone mini", s.sketch, { shot: s.phoneShot }), cell.mini);
 
     var cap = el("div", "cap");
-    cap.appendChild(text("div", "name", s.name));
-    cap.appendChild(text("p", "text", s.caption));
+    cap.appendChild(text("div", "name", q(ctx, s.name)));
+    cap.appendChild(text("p", "text", q(ctx, s.caption)));
     var note = noteFor(W, story, s, row, col, continuesNextPage);
     if (note) cap.appendChild(text("div", "note " + note.kind, note.text));
     place(ctx, fit(cap, F.strings.fill(W.fitCaption, where), s.line), cell.caption);
@@ -196,8 +196,8 @@
     cell.errors.forEach(function (e) {
       place(ctx, frame(ctx, p.kind, "error", { error: true, shot: e.error.shot, small: true }), e.frame);
       var box = el("div", "etext");
-      box.appendChild(text("div", "name", e.error.name));
-      box.appendChild(text("p", "text", e.error.caption));
+      box.appendChild(text("div", "name", q(ctx, e.error.name)));
+      box.appendChild(text("p", "text", q(ctx, e.error.caption)));
       box.appendChild(text("div", "note " + (e.error.to === "end" ? "end" : "jump"),
         e.error.to === "end" ? W.endsHere : F.strings.fill(W.backTo, { n: e.error.to })));
       place(ctx, fit(box, F.strings.fill(W.fitError, { n: where.n, t: where.t, e: e.error.name }), e.error.line), e.text);
@@ -336,6 +336,8 @@
     if (cls) n.className = cls;
     return n;
   }
+
+  function q(ctx, value) { return F.strings.quotes(value, ctx.board.project.language); }
 
   function text(tag, cls, value) {
     var n = el(tag, cls);

@@ -267,3 +267,11 @@ test("the template's own placeholder reads with no problems", () => {
   assert.ok(m, "the template has its app-flow block");
   assert.deepEqual(parse(m[1]).problems, []);
 });
+
+test("straight quotes print as curly ones in English, never in Arabic", () => {
+  const strings = require("../skills/frameflow/assets/template/frameflow/strings.js");
+  assert.equal(strings.quotes('Taps "Plan my week". Sees "Day off".', "en"), "Taps “Plan my week”. Sees “Day off”.");
+  assert.equal(strings.quotes("What didn't happen", "en"), "What didn’t happen");
+  assert.equal(strings.quotes('يضغط "ادفع"', "ar"), 'يضغط "ادفع"');
+  assert.equal(strings.quotes("", "en"), "");
+});
