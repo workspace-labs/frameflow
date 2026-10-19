@@ -187,6 +187,33 @@ test("a file name may use any character a Mac and Windows both allow, on every s
   refusedWith(board(["## Buy", "1. Home [grid]: Sees.", "   phone-shot: a.png"]), 7, "phone-version: yes");
 });
 
+test("an explicit screenshot declaration needs a picture path", () => {
+  for (const empty of ["", "   "]) {
+    refusedWith(board(["## Buy", "1. Home [grid]: Sees.", "   shot: " + empty]), 7, "needs a picture file");
+    refusedWith(board(["## Buy", "1. Home [grid]: Sees.", "   ! Wrong: Tries again. → 1", "     shot: " + empty]), 8, "needs a picture file");
+    refusedWith(parse(["# Site", "- kind: website", "- phone-version: yes", "## Buy", "1. Home [grid]: Sees.",
+      "   phone-shot: " + empty].join("\n")), 6, "needs a picture file");
+  }
+});
+
+test("an empty screenshot declaration still counts when detecting duplicate lines", () => {
+  refusedWith(board(["## Buy", "1. Home [grid]: Sees.", "   shot:", "   shot: screenshots/home.png"]), 8, "already has a shot:");
+  refusedWith(board(["## Buy", "1. Home [grid]: Sees.", "   ! Wrong: Tries again. → 1", "     shot:",
+    "     shot: screenshots/error.png"]), 9, "already has a shot:");
+  refusedWith(parse(["# Site", "- kind: website", "- phone-version: yes", "## Buy", "1. Home [grid]: Sees.",
+    "   phone-shot:", "   phone-shot: screenshots/home.png"].join("\n")), 7, "already has a phone-shot:");
+});
+
+test("unsafe raw-script text is refused before it is copied into the HTML page", () => {
+  for (const token of ["</script>", "</ScRiPt>", "</script >", "</script\t>", "</script/>", "</script", "<!--<script>", "<!--"]) {
+    refusedWith(board(["## Buy", "1. Home [grid]: Sees " + token]), 6, "embedded copy");
+  }
+  refusedWith(board(["## Buy", "1. Home [grid]: Sees </script", ">"]), 6, "embedded copy");
+  for (const ordinary of ["Sees <script> as text.", "Sees </scripture> as text.", "Compares 1 < 2."]) {
+    assert.deepEqual(board(["## Buy", "1. Home [grid]: " + ordinary]).problems, []);
+  }
+});
+
 test("the last arrow must end in a screen number or end", () => {
   refusedWith(board(["## Buy", "1. Home [grid]: Sees a list. → banana", "2. Pay [form]: Pays."]), 6, "screen number or end");
   refusedWith(board(["## Buy", "1. Home [grid]: Sees a list. →", "2. Pay [form]: Pays."]), 6, "screen number or end");

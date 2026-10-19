@@ -13,7 +13,7 @@ The skill is the folder [`skills/frameflow/`](skills/frameflow/): its instructio
 [`SKILL.md`](skills/frameflow/SKILL.md), and a page template that draws the storyboard in any browser.
 **Nothing to install.**
 
-**Version 0.2.0** · 67 tests · reviewed over 4 rounds by a second AI · [how it was tested](TESTING.md)
+**Version 0.2.1** · 84 regression tests (including 3 optional native Mac checks) · [current and historical test evidence](TESTING.md)
 
 ---
 
@@ -26,7 +26,7 @@ In your project's `docs/app-flow/`:
 | `app-flow.md` | the storyboard as short, readable text: the master copy any agent can read and update |
 | `storyboard.html` | the page that draws it (open it in Chrome, Edge or Safari) |
 | `<Project> - App flow v1.pdf` | the PDF for the client: a cover, then one page per user story |
-| `screenshots/` | after building: the real screens |
+| `screenshots/` | approved screen designs from version 1 when available; real screens after building |
 
 The PDF holds:
 
@@ -61,20 +61,31 @@ The storyboard needs only a browser. The skill needs nothing else.
 npx skills add workspace-labs/frameflow -g
 ```
 
-Or by hand, for Claude Code:
+Or by hand, for Claude Code (macOS or Linux, Bash). The copy refuses an existing file, folder
+or symlink; back up an existing installation before choosing to replace it:
 
 ```bash
 git clone https://github.com/workspace-labs/frameflow.git
-mkdir -p ~/.claude/skills
-cp -R frameflow/skills/frameflow ~/.claude/skills/
+skill_root="$HOME/.claude/skills"
+skill_target="$skill_root/frameflow"
+if [ -e "$skill_target" ] || [ -L "$skill_target" ]; then
+  printf '%s\n' "Already exists: $skill_target. Back it up before updating." >&2
+  false
+else
+  mkdir -p "$skill_root" && cp -R frameflow/skills/frameflow "$skill_target"
+fi
 ```
 
 **Claude app (chat and Cowork)**: make the zip, then upload it in **Customize → Skills**.
 
 ```bash
 cd frameflow
-rm -f dist/frameflow.zip && mkdir -p dist
-(cd skills && zip -r -X ../dist/frameflow.zip frameflow -x '*.DS_Store')
+if [ -e dist/frameflow.zip ] || [ -L dist/frameflow.zip ]; then
+  printf '%s\n' "Already exists: dist/frameflow.zip. Back it up before rebuilding." >&2
+  false
+else
+  mkdir -p dist && (cd skills && zip -r -X ../dist/frameflow.zip frameflow -x '*.DS_Store')
+fi
 ```
 
 **GitHub Copilot, Cursor and ChatGPT**: where your tool supports agent skills, install the same folder.
@@ -89,6 +100,9 @@ Open [`skills/frameflow/assets/template/storyboard.html`](skills/frameflow/asset
 in a browser. To see an example, paste the text of one of the files in
 [`skills/frameflow/examples/`](skills/frameflow/examples/) between the two `app-flow` lines in that file, and
 reload.
+
+Follow the text-copy rules before pasting: no closing script tags in any capitalisation or spacing,
+and no HTML comment openings (`<!--`). These can break the embedded copy before the reader runs.
 
 ## The text copy
 
@@ -111,9 +125,9 @@ The full shape is in [`references/storyboard-format.md`](skills/frameflow/refere
 
 ## How it was tested
 
-64 automated tests (Node.js 18, 20 and 22), 8 planted bugs all caught, and 4 rounds of independent review
-by a second AI (OpenAI Codex) that found 11 problems, all fixed before release. The full record, and what has
-not been tried yet, is in [`TESTING.md`](TESTING.md).
+The original 0.1.0 release had 64 automated tests, 8 planted bugs caught, and 4 rounds of independent
+review that found 11 problems. The current repair adds targeted parser, shell and native Mac regressions.
+Current results and the dated historical record are kept separately in [`TESTING.md`](TESTING.md).
 
 ## Limits
 

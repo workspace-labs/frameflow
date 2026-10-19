@@ -74,8 +74,9 @@ The workflow tells you the steps, not the screens: confirm the screens with the 
 
 Before drawing anything, say the plan back in your own words and wait for their yes:
 
-> *"I'll draw 3 pages: **Signing in** (3 screens) · **Ordering food** (6 screens, with 2 things that can go
-> wrong on Pay) · **Settings** (2 screens). Is that right?"*
+> *"For this phone app I'll draw a cover plus 6 story pages: **Signing in** (3 screens over 2 pages) ·
+> **Ordering food** (6 screens over 3 pages, with 2 things that can go wrong on Pay) · **Settings**
+> (2 screens on 1 page). Is that right?"*
 
 They can keep it, merge two stories, split one, rename them or change the order. Draw only after *"yes,
 that's it"*. A story longer than one page continues on a "part 2" page: say so in the read-back.

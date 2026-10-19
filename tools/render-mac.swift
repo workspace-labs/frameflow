@@ -11,6 +11,7 @@ final class Renderer: NSObject, WKNavigationDelegate {
     let out: URL
     let page: URL
     var tries = 0
+    var loadTimeout: DispatchWorkItem?
 
     init(page: URL, out: URL) {
         self.page = page
@@ -21,12 +22,22 @@ final class Renderer: NSObject, WKNavigationDelegate {
         super.init()
         window.contentView = web
         web.navigationDelegate = self
+        let timeout = DispatchWorkItem { [weak self] in
+            self?.fail("load failed: the page did not finish loading after 20 s")
+        }
+        loadTimeout = timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: timeout)
         web.loadFileURL(page, allowingReadAccessTo: page.deletingLastPathComponent().deletingLastPathComponent())
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { poll() }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        loadTimeout?.cancel()
+        poll()
+    }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { fail("load failed: \(error)") }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { fail("load failed: \(error)") }
 
     func poll() {
         web.evaluateJavaScript("document.documentElement.getAttribute('data-frameflow')") { value, _ in
@@ -69,7 +80,8 @@ final class Renderer: NSObject, WKNavigationDelegate {
             guard let image = image, let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
                   let png = rep.representation(using: .png, properties: [:]) else { return self.fail("snapshot \(i + 1): \(String(describing: error))") }
             let file = self.out.appendingPathComponent(String(format: "page-%02d.png", i + 1))
-            try? png.write(to: file)
+            do { try png.write(to: file) }
+            catch { return self.fail("could not write \(file.lastPathComponent): \(error)") }
             self.snap(pages, i + 1)
         }
     }
@@ -97,6 +109,7 @@ final class Renderer: NSObject, WKNavigationDelegate {
     }
 
     func fail(_ why: String) {
+        loadTimeout?.cancel()
         FileHandle.standardError.write("render-mac: \(why)\n".data(using: .utf8)!)
         exit(1)
     }

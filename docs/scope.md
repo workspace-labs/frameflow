@@ -7,14 +7,16 @@
   red dashed frames for what happens when something goes wrong.
 - For a **phone app, tablet app, desktop app or website**: the frame follows the kind (phone, tablet,
   app window, browser). A website can also show its phone version.
-- **Before building**: simple sketches, so the client agrees on the screens before any code exists.
-  **After building**: real screenshots, for the handover.
+- **Before building**: approved screen designs from version 1 when available; otherwise simple sketches,
+  so the client agrees on the screens before any code exists. **After building**: the real screens,
+  including any differences from the earlier approved design.
 - **The client decides**: every storyboard has a version (v1, v2…) and is either a draft or
   "Approved" with the date.
 - One page per user story (a default the person can change). A story too long for a page continues on a
   "part 2" page.
-- Saves a **text copy** (`app-flow.md`) next to the page every time. It is the master copy that any agent
-  can read, and updates start from it.
+- Saves a **text copy** (`app-flow.md`) next to the page by default. It is the master copy that any agent
+  can read, and updates start from it. If the person explicitly asks for no text file, the page's
+  app-flow block is the master instead; never replace it with the template.
 - English by default; **Arabic** (right to left) when asked.
 - Works with Claude Code, Claude in the browser, ChatGPT/Codex, GitHub Copilot and Cursor. If the
   workflow-project skill is there, frameflow builds from its approved workflow.

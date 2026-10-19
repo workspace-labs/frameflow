@@ -4,6 +4,11 @@ The storyboard is written as one short Markdown file in a fixed shape. It is the
 page draws from it, and every update starts from it. The page refuses a line that does not fit the shape,
 and says which line and what to change.
 
+Before copying text into the HTML page, reject closing script tags in any capitalisation (including
+whitespace or `/` after `script`) and HTML comment openings (`<!--`). They can end or swallow the
+embedded copy before the page's reader runs. Use plain wording instead; do not paste unsafe text and
+wait for a browser refusal.
+
 ## Contents
 
 - A complete small file
@@ -110,6 +115,8 @@ a name ending in a space or a dot, and the characters `< > : " \ | ? * % #`.
 - Name the files by story and screen number: `1-2-home.png` is story 1, screen 2.
 - For a website with `phone-version: yes`, a `phone-shot:` line gives the phone picture.
 - A missing picture keeps its sketch, with a small "Screenshot missing" note. The page never breaks.
+- An explicit `shot:` or `phone-shot:` line must name a file. An empty path is refused by line number;
+  omit the line when no screenshot is intended. Each kind of screenshot line may appear only once.
 - The whole picture is shown, never cropped or stretched. A phone frame has a modern phone's tall shape,
   so a phone screenshot fills it; a picture shaped differently leaves light grey room around it.
 - In English, straight quote marks in the text are printed curly: `"Pay"` shows as “Pay”.

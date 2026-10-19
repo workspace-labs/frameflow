@@ -3,6 +3,21 @@
 All notable changes to this project. The version is `VERSION` in
 `skills/frameflow/assets/template/frameflow/model.js`.
 
+## [0.2.1] - 2026-10-19
+
+### Fixed
+
+- Refuse explicit empty screenshot paths and duplicate declarations even when the first path was empty.
+- Check the master text for closing-script delimiters and HTML comment openings before embedding it;
+  the Mac preparation tool refuses unsafe input before writing or opening a page.
+- Give each Mac render a private workspace and freshly compiled helper, preventing stale screenshots,
+  page images or a preexisting shared executable from carrying into another project.
+- Report PNG write failures and provisional-navigation errors; bound an initial load that never finishes.
+- Correct phone continuation-page counts and approved-design documentation. Preserve historical test
+  evidence, and make manual installation and archive creation refuse existing destinations.
+
+The approved fonts, colours, frame dimensions and page geometry are unchanged.
+
 ## [0.2.0] - 2026-10-15
 
 Three fixes the owner asked for after the Planvy app flow, where the design was approved but the storyboard
