@@ -16,7 +16,10 @@ Node.js 18 or newer, for the tests only. The skill itself needs nothing but a br
 
 The tests check the reading rules and the page layout numbers. They cannot see the page. After any change
 to the template, open each example in a browser and look at every page, or on a Mac run
-`tools/render-mac.sh` (it writes page pictures and a PDF to `/tmp/frameflow-render/`).
+`tools/render-mac.sh` (it reports a fresh private temporary directory containing page pictures and a PDF).
+For native helper checks on a Mac with Xcode command line tools, use `FRAMEFLOW_NATIVE_TESTS=1 node --test`.
+Without that opt-in, the three native WebKit checks are explicitly skipped. Shell fixtures run when
+a POSIX shell and Python 3 are available; otherwise their skip reason is explicit.
 
 ## Rules for this repository
 

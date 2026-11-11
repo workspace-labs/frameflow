@@ -1,25 +1,149 @@
 # How frameflow was tested
 
+## The new look — 0.3.0, 11 November 2026
+
+Version 0.3.0 replaced the drawing (one screen a page, the app's own colours, tap markers) and was merged
+with 0.2.1, keeping its input checks, its Mac render tool and its tests. The layout tests were rewritten for
+the new pages. What is true of 0.3.0:
+
+| What | Result |
+|---|---|
+| Automated tests | **72 passed, 0 failed, 3 skipped** on Node.js 18, 20 and 22; **75 passed** on Node.js 20 with the native Mac checks enabled (46 reader and colour rules, 15 page layout, 14 Mac render tool) |
+| Planted bugs | **8** deliberate breaks (3 in the reader, 1 in the colour rules, 4 in the layout). The tests caught **all 8** |
+| Pages looked at | The five examples, the screenshot fixture, a real tablet app's 16-page flow and a worst-case long storyboard were drawn with no refusal; sample pages of each kind were looked at in English and Arabic, light and dark |
+| PDF | A4 landscape, one sheet per page, in Chromium (all of the above) and in WebKit through the Mac render tool (three of them) |
+| Independent review | **Not yet.** 0.3.0's new drawing has not been reviewed by a second AI |
+| Not tried | Windows, Linux, Edge, Firefox, Safari's own Print dialog, a native Arabic read, a fresh-session dry run of the new `SKILL.md` |
+
+The sections below are the records of 0.2.1 and 0.1.0, kept as they were written; their page counts and
+"geometry unchanged" statements describe the old look.
+
+## Repair verification — 0.2.1, 19 October 2026
+
+**Local result: 84/84 tests passed with native Mac checks enabled, and all six browser fixtures
+rendered correctly.** This is new evidence for 0.2.1; the original 0.1.0 review is preserved below.
+
+The repair started from [`bc84e2962d0edc5f3c344e68f7d2a3746a058ebd`](https://github.com/workspace-labs/frameflow/commit/bc84e2962d0edc5f3c344e68f7d2a3746a058ebd).
+The final 23-file skill bundle has static-auditor digest
+`8f9b27fc33782579a6edc59a616295cc8d676d29e03011948d86b9bda5e6f8d7`.
+Tests, fixtures, helper tools and this evidence stay outside the installable skill.
+
+### What was found and fixed
+
+- Explicit empty screenshot lines were accepted as if no picture was requested. An empty first line
+  also bypassed duplicate detection. They now refuse with the actual declaration line.
+- Raw closing-script spellings could execute an inert browser test marker; an HTML-comment/script
+  sequence swallowed the renderer resources and left no ready/refused state. The Mac preparation
+  helper now refuses these tokens before writing a page or launching WebKit. The parser supports
+  preflight refusal, and the skill/format explain the check before manual copying.
+- Same-basename renders reused a shared directory: one project could inherit another project's images
+  and stale pages. Each render now uses a new private directory and freshly compiled helper.
+- A failed PNG write could still report success after making a PDF. It now fails with the image name.
+- Missing-file provisional navigation never reached the old polling timeout. It now exits with a load
+  error; an initial load that never finishes also has a bounded fallback.
+- Read-back page counts, approved-design descriptions and current versus historical test claims were
+  stale. Manual installation and ZIP creation now refuse existing destinations.
+
+These were demonstrated by failing tests/probes before correction. The exact-only script-guard
+mutation is also caught: mixed-case, real-newline and slash variants fail if protection is weakened.
+No font, colour, frame dimension, page geometry or rendering-style change was made.
+
+### Automated results
+
+The original suite passed **67/67**. The final suite contains 70 reader/layout/string tests,
+11 helper/precondition checks and 3 native Mac integration checks.
+
+| Runtime on the local Mac | Result | Native checks |
+|---|---|---|
+| Node.js 18.20.8 | 81 passed, 0 failed | 3 explicitly skipped without opt-in |
+| Node.js 20.20.2 | 81 passed, 0 failed | 3 explicitly skipped without opt-in |
+| Node.js 22.23.1 | 81 passed, 0 failed | 3 explicitly skipped without opt-in |
+| Node.js 20.20.2, native enabled | **84 passed, 0 failed, 0 skipped** | Real WebKit PNG/PDF control, PNG write failure and missing-file navigation |
+
+Run from the repository root:
+
+```bash
+node --test
+```
+
+Core checks need only Node.js 18 or newer. Shell fixtures require an available POSIX shell and Python 3;
+they explicitly skip when unavailable. Missing prerequisites are distinguished from installed tools
+that fail. The Windows prerequisite decision is tested without pretending that Windows itself ran.
+Native Mac checks need the existing Xcode command line tools and a GUI-capable session:
+
+```bash
+FRAMEFLOW_NATIVE_TESTS=1 node --test
+```
+
+Native windows remain hidden. Restricted process sandboxes can block WebKit; the recorded native
+checks used a permitted local process run with a known-good fixture before testing failures.
+
+### Browser and PDF output
+
+The already-installed Google Chrome 155.0.8059.80 ran with isolated private profiles and external
+traffic disabled. All five shipped examples plus the after-build fixture reported ready:
+
+| Fixture | Pages including cover |
+|---|---|
+| Reading tablet | 2 |
+| English food delivery | 6 |
+| Desktop tasks | 3 |
+| Arabic food delivery | 4 |
+| Clinic website, with phone versions | 4 |
+| After-build screenshot fixture | 3 |
+
+All **22 page images** were inspected; their pixels and measured DOM geometry match the baseline.
+The after-build fixture retained its three complete screenshots and its one intentionally missing
+picture fallback. Wide-title inputs correctly refuse; tested maximum-name inputs did not wrap footers.
+
+English and Arabic Chrome PDFs contain exactly **6 and 4 A4 pages** respectively, with no extra blank
+pages. All ten rendered PDF pages were inspected. Page-isolation screenshots can hide SVG definitions
+used by arrowheads; full-document PDFs were checked as well. Those temporary test artifacts are not
+part of the installed package.
+
+The repaired Mac helper was also run end to end on the English and Arabic examples in hidden WebKit
+windows. It wrote six and four PNGs respectively, with matching six- and four-page PDFs in fresh
+private directories.
+
+Five unsafe baseline sources were independently retested through the actual Mac preparation helper:
+each exits nonzero, writes no storyboard HTML/native binary and reaches neither compiler nor renderer.
+The raw closing/comment payloads were not pasted directly into the final template for this check.
+
+### Installation, archive and review
+
+The documented Bash copy procedure was tested in disposable paths containing spaces and brackets.
+All 23 files copied with identical SHA-256 hashes; 70 core tests passed against that installed copy.
+Existing file, directory, symlink and broken-symlink destinations were refused without changing their
+sentinels. Existing archive refusal also preserved its sentinel. A fresh dist/frameflow.zip passed CRC
+validation and contains exactly the 23 source files with matching hashes, plus directory entries.
+
+The standard skill validator passed. The same read-only auditor reported zero errors and zero review
+warnings before and after repair. An independent source reviewer reran checks and found no remaining
+blocking defect. Recovery snapshots and raw logs/manifests are retained outside the published skill.
+
+The existing Codex and .agents skill copies were backed up and updated from the validated source.
+Their complete 23-file SHA-256 manifests match, and the existing Claude symlink is preserved.
+
+### Limits
+
+- This is local Mac evidence across Node versions, not Windows/Linux or new CI execution. Native Windows,
+  Edge, Firefox and Safari's Print dialog were not exercised in this repair.
+- The initial-load 20-second fallback was not deliberately forced; successful navigation and the actual
+  missing-file failure path were exercised.
+- Embedding protection covers Markdown preparation/preflight. Arbitrary pre-existing HTML is trusted;
+  manually pasting forbidden raw tokens into HTML bypasses the documented preparation check.
+- Explicit skill selection and universal agent compliance are not established by runtime/package tests.
+  No new full agent/client approval-loop dry run was performed; the earlier dry run remains historical.
+
+---
+
+## Historical verification record — 0.1.0, October 2026
+
 frameflow was not just written. It was tested, then a second AI tried to break it, and every problem it found
 was fixed before release. This page lists what was run and what was found, and is honest about what has not
 been tried yet.
 
-## Since then: version 0.3.0 (2026-11-11)
-
-Version 0.3.0 replaced the drawing (one screen a page, the app's own colours, tap markers). The reader kept
-its shape and its tests; the layout tests were rewritten for the new pages. What is true of 0.3.0:
-
-| What | Result |
-|---|---|
-| Automated tests | **58**, all passing on Node.js 18, 20 and 22 (43 for the reader and the colour rules, 15 for the page layout) |
-| Planted bugs | **8** deliberate breaks (3 in the reader, 1 in the colour rules, 4 in the layout). The tests caught **all 8** |
-| Pages looked at | Every example, a real tablet app's 16-page flow and a worst-case long storyboard, drawn and looked at, then printed to A4 landscape PDF in two browser engines (WebKit and Chromium): one sheet per page in both |
-| Independent review | **Not yet.** The second AI reviewed 0.1.0 only; 0.3.0's new drawing has not been reviewed |
-| Not tried | Windows, Firefox, Safari's own Print dialog, a native Arabic read |
-
-Everything below is the record of version 0.1.0, kept as it was written.
-
-## At a glance
+### At a glance
 
 | What | Result |
 |---|---|
@@ -35,7 +159,7 @@ Everything below is the record of version 0.1.0, kept as it was written.
 The release on GitHub has exactly the same skill folder, tests and tools as the approved code. Only status
 wording changed.
 
-## The automated tests
+### The automated tests
 
 Run them yourself from the repository root (Node.js 18 or newer, needed for the tests only):
 
@@ -52,7 +176,7 @@ node --test
 
 Every fix from the review left a test behind, so the same bug cannot come back silently.
 
-## The independent review
+### The independent review
 
 Codex reviewed the skill as a stranger would. It read the real code, ran the tests, and tried its own
 attacks. After each round the fixes went back to Codex, and Codex decided each time whether a finding was
@@ -72,7 +196,7 @@ really closed. Two findings were reopened and fixed again (F04 twice) before the
 | F10 | Low | The skill's steps did not match an agreed rule about saving the text copy | The steps now follow it |
 | F11 | Medium | Updating an existing storyboard could skip copying missing files (found in round 2) | The update step copies what is missing and keeps the person's own files |
 
-## Not tried yet
+### Not tried yet
 
 These have not been tried yet. If you try one, an issue telling us how it went is welcome.
 

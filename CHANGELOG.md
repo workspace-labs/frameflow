@@ -36,11 +36,12 @@ set the rule that a storyboard follows its app (ADR 0003).
 ### Fixed
 
 - Safari's print engine added a blank sheet after every page at 793 px tall; the page is 792.
+- Merged with 0.2.1: its input checks, its safer Mac render tool and its tests are all kept.
 - In an Arabic footer or cover line, "v1" and the date keep their place.
 
 ### Tests
 
-- 58 tests (was 67): the layout tests were rewritten for the new pages (one page per screen in order, no
+- 75 tests (was 84, three of them optional native Mac checks): the layout tests were rewritten for the new pages (one page per screen in order, no
   overlap, nothing off the page, the strip always shows the current screen, the frame keeps the picture's
   shape), and the reader gained tests for `tap:`, `look:`, the colours, `crop` and Sees / Does.
 
@@ -48,6 +49,20 @@ set the rule that a storyboard follows its app (ADR 0003).
 
 - No second-AI review of this version yet. Not tried on Windows, in Firefox or in Safari's own Print dialog.
 - The README's picture still shows the old look.
+## [0.2.1] - 2026-10-19
+
+### Fixed
+
+- Refuse explicit empty screenshot paths and duplicate declarations even when the first path was empty.
+- Check the master text for closing-script delimiters and HTML comment openings before embedding it;
+  the Mac preparation tool refuses unsafe input before writing or opening a page.
+- Give each Mac render a private workspace and freshly compiled helper, preventing stale screenshots,
+  page images or a preexisting shared executable from carrying into another project.
+- Report PNG write failures and provisional-navigation errors; bound an initial load that never finishes.
+- Correct phone continuation-page counts and approved-design documentation. Preserve historical test
+  evidence, and make manual installation and archive creation refuse existing destinations.
+
+The approved fonts, colours, frame dimensions and page geometry are unchanged.
 
 ## [0.2.0] - 2026-10-15
 

@@ -68,6 +68,11 @@
       if (!raw.trim()) continue;
       var m;
 
+      // Validate the master text before embedding it: HTML parses script delimiters before this reader runs.
+      if (/<\/script(?=[\t\f\r />]|$)/i.test(raw) || raw.indexOf("<!--") >= 0) {
+        problem(n, "This text would break the page's embedded copy. Remove closing script tags and HTML comment openings before copying it into storyboard.html.");
+      }
+
       if (!seenTitle) {
         m = TITLE.exec(raw);
         if (m && raw.indexOf("##") !== 0) {
@@ -233,12 +238,13 @@
         return;
       }
       var field = key === "shot" ? "shot" : "phoneShot";
-      if (lastItem[field]) {
+      if (lastItem[field + "Line"] !== undefined) {
         problem(n, "This screen already has a " + key + ": line. Keep one.");
         return;
       }
       lastItem[field] = path;
       lastItem[field + "Line"] = n;
+      if (!path) problem(n, key + ": needs a picture file, like screenshots/1-2-home.png.");
     }
 
     board.project.lines = settingLines;

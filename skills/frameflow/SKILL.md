@@ -106,6 +106,9 @@ If the pictures show the device's own status or navigation bar, cut it off every
 2. In `docs/app-flow/storyboard.html`, replace only the text between
    `<script type="text/markdown" id="app-flow">` and `</script>` with the exact text of `app-flow.md`,
    starting at the left edge. Change nothing else in the template: the look is fixed.
+   **Before copying**, check the text contains no closing script tag (in any capitalisation, including
+   whitespace or `/` after `script`) and no `<!--` token. Ask for plain wording instead. These can end
+   or swallow the embedded copy before the reader runs; do not paste them and rely on the page to refuse.
 3. Check the page drew and make the PDF: [references/pdf.md](references/pdf.md). If it refuses, fix
    `app-flow.md` by the line numbers it gives, copy it in again, check again. Never edit the template to
    silence a refusal.
@@ -162,7 +165,8 @@ Say these when they matter:
 - English and Arabic only.
 - Each website screen is a browser window; `phone-version: yes` adds a small phone over its corner.
 - For a desktop app or a website, capture the content only: the page draws the window's or browser's top bar.
-- Never write the characters `</script>` in `app-flow.md`: they would end the page's copy early.
+- No closing script tags (including mixed-case or spaced spellings) or HTML comment openings (`<!--`)
+  in `app-flow.md`: they can end or swallow the page's copy before the reader runs.
 
 ## Files
 
