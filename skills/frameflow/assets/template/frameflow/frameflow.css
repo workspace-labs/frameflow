@@ -1,6 +1,7 @@
-/* frameflow: the fixed look. White page, a thin blue line on top, Plus Jakarta Sans, one blue accent word.
-   Approved by the owner on 2026-10-06 (B2 storyboard, background option 3, brand option C).
-   Change colours, fonts or sizes only with his yes. Positions come from layout.js. */
+/* frameflow: the fixed look (Cinema). An A4 page on its side, one screen a page shown big, the number and
+   "Sees / Does" beside it, the story's other screens small underneath. The page wears the app's own two
+   colours (render.js sets the --variables from theme.js); the type and the page structure are frameflow's.
+   Approved by the owner on 2026-11-11. Change fonts or sizes only with his yes. Positions come from layout.js. */
 
 @font-face { font-family: "PJS"; src: url("fonts/PlusJakartaSans-Regular.ttf") format("truetype"); font-weight: 400; }
 @font-face { font-family: "PJS"; src: url("fonts/PlusJakartaSans-SemiBold.ttf") format("truetype"); font-weight: 600; }
@@ -9,43 +10,37 @@
 @font-face { font-family: "Naskh"; src: url("fonts/NotoNaskhArabic-Regular.ttf") format("truetype"); font-weight: 400 600; }
 @font-face { font-family: "Naskh"; src: url("fonts/NotoNaskhArabic-Bold.ttf") format("truetype"); font-weight: 700 800; }
 
+/* frameflow's own colours, until render.js hands over the app's. */
 :root {
-  --ink: #14161f;
-  --mute: #6b7080;
-  --blue: #3d5afe;
-  --blue-soft: #eef1ff;
-  --line: #e3e6ef;
-  --sketch: #eef0f6;
-  --frame: #c9d1ff;
-  --red: #e5484d;
-  --red-line: #f3b9bb;
-  --red-soft: #fdecec;
-  --green: #2f9e5a;
-  --green-soft: #e7f6ec;
-  --gold: #b7791f;
-  --gold-soft: #fff8e6;
+  --bg: #f3f4f6; --ink: #15171c; --mute: #7f828a; --line: #d8dadd;
+  --acc: #3d5afe; --acc-rgb: 61, 90, 254; --on-acc: #ffffff; --app: #3d5afe;
+  --red: #d92d20; --red-rgb: 217, 45, 32; --on-red: #ffffff;
+  --bezel: #15171c; --bezel-line: #15171c; --glow: #cfd5f8; --glow-red: #eeccc9;
+  --sketch: #eef0f6; --green: #2f9e5a; --green-soft: #e7f6ec; --red-soft: #fdecec;
   --font: "PJS", "Naskh", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-body { font-family: var(--font); color: var(--ink); background: #e9ebf1; }
+body { font-family: var(--font); color: var(--ink); background: #d9dce3; }
+html.dark body { background: #17191b; }
 html[dir="rtl"] { --font: "Naskh", "PJS", system-ui, sans-serif; }
 
 /* ---------- pages ---------- */
 
-.book { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 24px 0 48px; }
-.page { position: relative; width: 793px; height: 1122px; background: #fff; overflow: hidden;
-  box-shadow: 0 6px 24px rgba(20, 22, 31, .14); }
+.book { display: flex; flex-direction: column; align-items: center; gap: 26px; padding: 28px 0 60px; }
+.page { position: relative; flex: none; width: 1122px; height: 792px; overflow: hidden; background: var(--bg); color: var(--ink);
+  box-shadow: 0 8px 30px rgba(16, 21, 28, .22); }
 .page > * { position: absolute; }
-.topline { left: 0 !important; top: 0; width: 100%; height: 8px; background: var(--blue); }
+/* An "if it goes wrong" page: the same page in red. */
+.page.bad { --acc: var(--red); --acc-rgb: var(--red-rgb); --on-acc: var(--on-red); --glow: var(--glow-red); }
 
-.print-hint { max-width: 793px; margin: 20px auto 0; padding: 10px 14px; border-radius: 10px;
-  background: #fff; color: var(--mute); font-size: 13px; text-align: center; }
+.print-hint { max-width: 1122px; margin: 20px auto 0; padding: 10px 14px; border-radius: 10px;
+  background: #fff; color: #6b7080; font-size: 13px; text-align: center; }
 
-@page { size: A4; margin: 0; }
+@page { size: A4 landscape; margin: 0; }
 @media print {
-  body { background: #fff; }
+  body, html.dark body { background: var(--bg); }
   .print-hint { display: none; }
   .book { display: block; padding: 0; }
   .page { box-shadow: none; break-after: page; page-break-after: always; }
@@ -54,125 +49,152 @@ html[dir="rtl"] { --font: "Naskh", "PJS", system-ui, sans-serif; }
 
 /* ---------- words ---------- */
 
-.label { font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
-html[dir="rtl"] .label { letter-spacing: 0; font-size: 12px; }
-.accent { color: var(--blue); }
-.brand { font-size: 15px; font-weight: 700; }
+.label { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--mute); white-space: nowrap; }
+html[dir="rtl"] .label, html[dir="rtl"] .k { letter-spacing: 0; font-size: 13px; }
 
-.hero { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; overflow: hidden; }
-.hero .label { margin-bottom: 10px; }
-.title { font-size: 42px; font-weight: 800; line-height: 1.12; letter-spacing: -.02em; }
-.about { max-width: 600px; margin-top: 14px; font-size: 16px; line-height: 1.5; color: var(--mute); }
-html[dir="rtl"] .title { letter-spacing: 0; line-height: 1.4; }
+.top { display: flex; justify-content: space-between; gap: 32px; }
+.top .left { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
-.pill { display: inline-flex; align-items: center; margin-top: 22px; padding: 0 14px; border-radius: 15px;
-  font-size: 13px; font-weight: 700; line-height: 30px; }
-.pill.approved { background: var(--green-soft); color: var(--green); }
-.pill.approved::before { content: ""; width: 5px; height: 10px; margin: -3px 9px 0 2px; border: solid var(--green);
-  border-width: 0 2px 2px 0; transform: rotate(45deg); }
-.pill.draft { background: var(--gold-soft); color: var(--gold); }
+.foot { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; border-top: 1px solid var(--line);
+  padding-top: 9px; font-size: 11px; color: var(--mute); white-space: nowrap; }
+.foot .credit { font-size: 9px; }
 
-.contents { list-style: none; overflow: hidden; }
-.contents li { display: flex; align-items: baseline; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-.contents.tight li { padding: 5px 0; }
-.contents .n { width: 22px; font-weight: 800; color: var(--blue); }
-.contents .t { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: clip; }
-.contents .c, .contents .pg { color: var(--mute); font-size: 12px; white-space: nowrap; }
+/* The left column of a screen's page. */
+.col { overflow: hidden; }
+/* The number reads left to right in every language: 2/5. */
+.num { direction: ltr; font-family: "PJS", sans-serif; font-size: 132px; font-weight: 800; line-height: 1; letter-spacing: -.05em; color: var(--acc); }
+.num small { font-size: 22px; font-weight: 600; letter-spacing: 0; color: var(--mute); margin-inline-start: 8px; }
+html[dir="rtl"] .num { text-align: right; }
+html[dir="rtl"] .num small { font-family: var(--font); }
+.warn { display: inline-block; margin-top: 8px; padding: 0 11px; border-radius: 12px; font-size: 11px; font-weight: 700; line-height: 24px;
+  background: rgba(var(--acc-rgb), .15); color: var(--acc); }
+.col h2 { font-size: 29px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; margin-top: 14px; }
+html[dir="rtl"] .col h2 { letter-spacing: 0; line-height: 1.4; }
+.k { font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); margin-top: 16px; }
+.k.gap { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--line); }
+.v { font-size: 15px; line-height: 1.45; margin-top: 4px; }
+html[dir="rtl"] .v { font-size: 17px; line-height: 1.7; }
+.v.does { font-weight: 700; color: var(--acc); }
+.v.summary { font-size: 13px; color: var(--mute); }
+html[dir="rtl"] .v.summary { font-size: 14px; }
+.v.note { margin-top: 14px; font-weight: 700; }
+.v.note.jump { color: var(--acc); }
+.v.note.end::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 3px; background: currentColor;
+  margin-inline-end: 8px; }
 
-.meta { display: grid; grid-template-columns: 110px 1fr; row-gap: 6px; font-size: 13px; overflow: hidden; align-content: end; }
-.meta dt { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); line-height: 19px; }
-html[dir="rtl"] .meta dt { letter-spacing: 0; font-size: 11px; }
+/* Names under the small screens. */
+.tn { font-size: 10.5px; font-weight: 600; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tn.on { color: var(--ink); font-weight: 800; }
+.tn.c { text-align: center; font-size: 11px; }
+html[dir="rtl"] .tn { font-size: 13px; line-height: 16px; }
 
-.story-title { font-size: 26px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; line-height: 48px; }
-.summary { font-size: 13px; line-height: 1.45; color: var(--mute); overflow: hidden; }
-html[dir="rtl"] .story-title { letter-spacing: 0; }
+.arr { width: 18px; height: 18px; border: solid var(--acc); border-width: 3px 3px 0 0; transform: rotate(45deg) scale(.6); }
+.arr.sm { transform: rotate(45deg) scale(.42); }
+html[dir="rtl"] .arr { transform: rotate(-135deg) scale(.6); }
+html[dir="rtl"] .arr.sm { transform: rotate(-135deg) scale(.42); }
 
-.footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line);
-  font-size: 9px; color: var(--mute); padding-top: 6px; }
-.credit { font-size: 8px; color: #9aa0b0; text-align: center; }
+.dots { display: flex; justify-content: center; gap: 8px; }
+.dots i { flex: 0 1 22px; height: 4px; border-radius: 2px; background: var(--line); }
+.dots i.on { background: var(--acc); }
 
-/* ---------- captions ---------- */
+.back { font-size: 14px; line-height: 1.5; color: var(--mute); }
+.back b { display: block; color: var(--ink); }
 
-.cap, .etext { overflow: hidden; }
-.cap .name { font-size: 12.5px; font-weight: 700; line-height: 17px; }
-.cap .text { font-size: 11.5px; line-height: 15.5px; color: #3b3f4d; margin-top: 2px; }
-.etext .name { font-size: 11px; font-weight: 700; line-height: 15px; color: var(--red); }
-.etext .text { font-size: 10.5px; line-height: 14px; color: #3b3f4d; margin-top: 1px; }
-.note { font-size: 10.5px; font-weight: 700; line-height: 15px; margin-top: 3px; }
-.note.jump { color: var(--blue); }
-.note.end { color: var(--ink); }
-.note.end::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 2px; background: var(--ink);
-  margin-inline-end: 5px; vertical-align: 0; }
-html[dir="rtl"] .cap .name { line-height: 20px; }
-html[dir="rtl"] .cap .text { line-height: 18px; }
-html[dir="rtl"] .etext .text { line-height: 16px; }
+/* ---------- the cover ---------- */
 
-/* ---------- lines ---------- */
+.covtext { display: flex; flex-direction: column; align-items: flex-start; overflow: hidden; }
+.covtext .label { color: var(--acc); }
+.title { font-weight: 800; letter-spacing: -.04em; line-height: 1.04; margin-top: 14px; overflow-wrap: anywhere; }
+.title.xl { font-size: 92px; }
+.title.l { font-size: 64px; }
+.title.m { font-size: 46px; letter-spacing: -.03em; line-height: 1.1; }
+.title.s { font-size: 36px; letter-spacing: -.02em; line-height: 1.14; }
+html[dir="rtl"] .title { letter-spacing: 0; line-height: 1.35; }
+.about { font-size: 17px; line-height: 1.5; color: var(--mute); margin-top: 18px; }
+.pill { display: inline-block; margin-top: 22px; padding: 0 14px; border-radius: 15px; font-size: 13px; font-weight: 700; line-height: 30px; }
+.pill.draft { background: #fff3d1; color: #8a5a00; }
+.pill.approved { background: var(--green-soft); color: #1f7a43; }
+html.dark .pill.draft { background: #2a2410; color: #f0c35a; }
+html.dark .pill.approved { background: #10291b; color: #62d49f; }
 
-.links { left: 0; top: 0; pointer-events: none; overflow: visible; }
-.link { fill: none; stroke-linejoin: round; stroke-linecap: round; }
-.link.next, .link.turn { stroke: var(--blue); stroke-width: 1.8; }
-.link.error, .link.error-trunk { stroke: var(--red); stroke-width: 1.4; stroke-dasharray: 4 3; stroke-linecap: butt; }
-.head-blue { fill: var(--blue); }
-.head-red { fill: var(--red); }
+.covlist { align-self: stretch; margin-top: auto; padding-top: 22px; }
+.contents { list-style: none; margin-top: 8px; }
+.contents li { display: flex; align-items: baseline; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 15px; font-weight: 600; }
+.contents b { color: var(--acc); font-weight: 800; min-width: 12px; }
+.contents span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contents em { font-style: normal; font-weight: 400; font-size: 12px; color: var(--mute); white-space: nowrap; }
+.contents.tight li { padding: 6px 0; font-size: 13.5px; }
+.contents.tighter li { padding: 3px 0; font-size: 12.5px; }
+.contents.tighter em { font-size: 11px; }
+/* A cover with many stories gives its words a little less room each. */
+.covtext.full .about { font-size: 14.5px; margin-top: 12px; }
+.covtext.full .pill { margin-top: 14px; }
+.covtext.full .covlist { padding-top: 12px; }
+.meta { display: flex; align-items: flex-end; font-size: 12px; line-height: 1.5; color: var(--mute); overflow: hidden; }
 
-/* ---------- frames ---------- */
+/* ---------- device frames ---------- */
 
-.frame { background: #fff; border: 2px solid var(--frame); }
-.frame .screen { position: absolute; overflow: hidden; background: #fff; }
-.frame .num { position: absolute; top: -11px; left: -11px; width: 24px; height: 24px; border-radius: 50%;
-  background: var(--blue); color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
-html[dir="rtl"] .frame .num { left: auto; right: -11px; }
+/* --w is the frame's own width (set by render.js), so corners and bars keep their proportion at every size. */
+.dev { background: #fff; }
+.dev .screen { position: absolute; left: 0; right: 0; bottom: 0; overflow: hidden; background: #fff; border-radius: inherit; }
+.dev .bar { position: absolute; left: 0; right: 0; top: 0; background: #e7eaee; border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.dev .bar + .screen { border-top-left-radius: 0; border-top-right-radius: 0; }
+/* A window's three dots, and a browser's address line. */
+.dev .bar::before { content: ""; position: absolute; top: 50%; left: calc(var(--w) * .017); width: calc(var(--w) * .012); height: calc(var(--w) * .012);
+  margin-top: calc(var(--w) * -.006); border-radius: 50%; background: #b9c0c9;
+  box-shadow: calc(var(--w) * .02) 0 0 #b9c0c9, calc(var(--w) * .04) 0 0 #b9c0c9; }
+.dev.website .bar::after { content: ""; position: absolute; top: 22%; bottom: 22%; left: calc(var(--w) * .1); width: 44%; border-radius: 99px; background: #fff; }
 
-.frame.phone { border-radius: 20px; box-shadow: 0 10px 22px rgba(61, 90, 254, .10); }
-.frame.phone::before { content: ""; position: absolute; top: 8px; left: 50%; width: 30%; height: 5px; margin-left: -15%;
-  border-radius: 3px; background: var(--line); }
-.frame.phone .screen { inset: 20px 8px 10px 8px; border-radius: 4px; }
+.dev.phone { border-radius: calc(var(--w) * .12); }
+.dev.tablet { border-radius: calc(var(--w) * .016); }
+.dev.desktop, .dev.website { border-radius: calc(var(--w) * .0135); }
 
-.frame.tablet { border-radius: 16px; box-shadow: 0 10px 22px rgba(61, 90, 254, .10); }
-.frame.tablet::before { content: ""; position: absolute; top: 6px; left: 50%; width: 6px; height: 6px; margin-left: -3px;
-  border-radius: 50%; background: var(--line); }
-.frame.tablet .screen { inset: 16px 9px 12px 9px; border-radius: 3px; }
+.dev.hero.phone, .dev.hero.website { box-shadow: 0 0 0 6px var(--bezel), 0 0 0 7px var(--bezel-line), 0 22px 50px var(--glow); }
+.dev.hero.tablet { box-shadow: 0 0 0 7px var(--bezel), 0 0 0 8px var(--bezel-line), 0 30px 80px var(--glow); }
+.dev.hero.desktop { box-shadow: 0 0 0 1px var(--bezel-line), 0 24px 60px rgba(0, 0, 0, .28); }
 
-.frame.desktop, .frame.website { border-radius: 9px; box-shadow: 0 10px 22px rgba(61, 90, 254, .10); }
-.frame.desktop::before, .frame.website::before { content: ""; position: absolute; top: 7px; left: 9px; width: 6px; height: 6px;
-  border-radius: 50%; background: var(--line); box-shadow: 10px 0 0 var(--line), 20px 0 0 var(--line); }
-.frame.desktop .screen { inset: 20px 6px 6px 6px; border-radius: 3px; }
-.frame.website::after { content: ""; position: absolute; top: 5px; left: 42px; right: 12px; height: 10px; border-radius: 5px; background: var(--sketch); }
-.frame.website .screen { inset: 22px 6px 6px 6px; border-radius: 3px; }
-html[dir="rtl"] .frame.desktop::before, html[dir="rtl"] .frame.website::before { left: auto; right: 29px; }
-html[dir="rtl"] .frame.website::after { left: 12px; right: 42px; }
+.dev.side { opacity: .42; box-shadow: 0 0 0 4px var(--bezel); }
+.dev.thumb { border-radius: 5px; opacity: .42; box-shadow: 0 0 0 1px var(--line); }
+.dev.thumb.on { opacity: 1; box-shadow: 0 0 0 2px var(--acc); }
+.dev.mini { box-shadow: 0 0 0 4px var(--bezel), 0 0 0 5px var(--bezel-line), 0 12px 26px rgba(0, 0, 0, .3); }
+.dev.tilt { transform: rotate(-5deg); box-shadow: 0 0 0 8px var(--bezel), 0 0 0 9px var(--bezel-line), 0 40px 120px var(--glow); }
+.dev.tilt.phone { transform: rotate(5deg); }
+html[dir="rtl"] .dev.tilt { transform: rotate(5deg); }
+html[dir="rtl"] .dev.tilt.phone { transform: rotate(-5deg); }
 
-.frame.err { border: 2px dashed var(--red-line); box-shadow: none; }
-.frame.small.phone { border-radius: 12px; }
-.frame.small.phone::before { top: 5px; height: 3px; }
-.frame.small.phone .screen { inset: 12px 5px 6px 5px; }
-.frame.small.tablet .screen { inset: 10px 6px 8px 6px; }
-.frame.small.desktop .screen, .frame.small.website .screen { inset: 18px 5px 5px 5px; }
-.frame.small.website::after { left: 38px; height: 8px; }
+/* Pictures sit over the sketch; a missing one leaves the sketch and says so. The frame takes the picture's own
+   shape, so the whole picture shows (less whatever "crop" cuts off); only the small strip crops to its box. */
+.shot { position: absolute; left: 0; width: 100%; object-fit: fill; }
+.dev.thumb .shot { object-fit: cover; object-position: center top; }
+.missing { position: absolute; left: 6%; right: 6%; bottom: 5%; padding: 5px 8px; border-radius: 6px;
+  background: var(--red-soft); color: #c0392b; font-size: 11px; font-weight: 700; text-align: center; line-height: 1.2; }
+.dev.side .missing, .dev.mini .missing { font-size: 8px; padding: 3px 4px; }
 
-/* A website's phone version: a small phone over the browser's lower corner (placed by layout.js). */
-.frame.mini { border-width: 1.5px; border-radius: 11px; box-shadow: 0 6px 14px rgba(61, 90, 254, .14); }
-.frame.mini::before { top: 4px; height: 3px; }
-.frame.mini .screen { inset: 11px 4px 5px 4px; }
+/* ---------- tap and look markers ---------- */
 
-/* Real screenshots sit over the sketch; a missing one leaves the sketch and says so. */
-/* The whole screenshot, never cropped or stretched; any room left in the frame shows the light sketch colour. */
-.shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center top; background: var(--sketch); }
-/* A real phone screenshot already shows its own top bar, so the frame drops its sketch bar and the picture fills it. */
-.frame.phone.has-shot::before { display: none; }
-.frame.phone.has-shot .screen { inset: 5px; border-radius: 15px; }
-.frame.phone.small.has-shot .screen { inset: 4px; border-radius: 9px; }
-.missing { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 3px 4px; border-radius: 4px;
-  background: var(--red-soft); color: var(--red); font-size: 8px; font-weight: 700; text-align: center; line-height: 1.2; }
-.frame.mini .missing { font-size: 6px; left: 3px; right: 3px; bottom: 3px; padding: 2px; }
+.marks { position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none; }
+/* The thin dark edge keeps the marker visible on a button of its own colour. */
+.ring { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--acc); border: 2.5px solid #fff;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .5), 0 0 0 8px rgba(var(--acc-rgb), .35), 0 0 0 16px rgba(var(--acc-rgb), .16); }
+.ring.see { width: 44px; height: 44px; margin: -22px 0 0 -22px; background: transparent; border: 2.5px dashed var(--acc);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .45), inset 0 0 0 1.5px rgba(0, 0, 0, .45); }
+.tag { position: absolute; white-space: nowrap; font-style: normal; font-size: 12px; font-weight: 700; line-height: 26px; padding: 0 11px;
+  border-radius: 13px; background: var(--ink); color: var(--bg); }
+html.dark .tag { background: var(--acc); color: var(--on-acc); }
+html[dir="rtl"] .tag { font-size: 14px; }
+.tag.down { top: 26px; }
+.tag.up { bottom: 34px; }
+.tag.left { right: -12px; }
+.tag.right { left: -12px; }
+.see .tag.down { top: 50px; }
+.see .tag.up { bottom: 50px; }
 
-/* ---------- sketches: grey blocks and one blue button, in proportion to any frame ---------- */
+/* ---------- sketches: grey blocks and one button in the app's colour, in proportion to any frame ---------- */
 
 .sketch { position: absolute; inset: 9% 9%; display: flex; flex-direction: column; gap: 6%; }
-.sketch .b { background: var(--sketch); border-radius: 3px; flex: none; }
+.sketch .b { background: var(--sketch); border-radius: calc(var(--w) * .014); flex: none; }
 .sketch .field { height: 9%; }
-.sketch .button { height: 9%; background: var(--blue); border-radius: 4px; margin-top: auto; }
+.sketch .button { height: 9%; background: var(--app); margin-top: auto; }
 .sketch .row { height: 12%; position: relative; margin-inline-start: 22%; }
 .sketch .row::before { content: ""; position: absolute; inset-inline-start: -28%; top: 0; width: 20%; height: 100%; border-radius: 50%; background: var(--sketch); }
 .sketch .line { height: 5%; }
@@ -187,30 +209,32 @@ html[dir="rtl"] .frame.website::after { left: 12px; right: 42px; }
 .sketch .tick, .sketch .alert { width: 42%; aspect-ratio: 1; border-radius: 50%; background: var(--green-soft); position: relative; }
 /* The tick is drawn, not typed, so it looks the same on every computer (the font has no ✓). */
 .sketch .tick::after { content: ""; position: absolute; left: 37%; top: 22%; width: 22%; height: 40%; border: solid var(--green);
-  border-width: 0 3px 3px 0; transform: rotate(45deg); }
+  border-width: 0 calc(var(--w) * .014) calc(var(--w) * .014) 0; transform: rotate(45deg); }
 .sketch .alert { background: var(--red-soft); }
 .sketch .alert::after { content: "!"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  color: var(--red); font-weight: 800; font-size: 18px; }
+  color: #d92d20; font-family: "PJS", sans-serif; font-weight: 800; font-size: calc(var(--w) * .16); }
 .sketch.done .line { width: 60%; }
-.sketch.error .button { width: 70%; margin-top: 10%; height: 10%; }
-.frame.small .sketch .alert::after { font-size: 13px; }
+.sketch.error .button { width: 70%; margin-top: 10%; height: 10%; background: #d92d20; }
 
 /* Wide frames: the same sketches, laid out for a wide screen. */
-.frame.desktop .sketch.grid .card, .frame.website .sketch.grid .card { width: 30%; height: 30%; }
-.frame.desktop .sketch.grid .banner, .frame.website .sketch.grid .banner { height: 30%; }
-.frame.desktop .sketch .tick, .frame.website .sketch .tick, .frame.desktop .sketch .alert, .frame.website .sketch .alert { width: 20%; }
-.frame.desktop .sketch.form, .frame.website .sketch.form { padding: 4% 26% 0; }
-.frame.desktop .sketch .row, .frame.website .sketch .row { margin-inline-start: 8%; }
-.frame.desktop .sketch .row::before, .frame.website .sketch .row::before { inset-inline-start: -10%; width: 7%; }
-.frame.desktop .sketch .picture, .frame.website .sketch .picture { height: 46%; }
-.frame.desktop .sketch .button, .frame.website .sketch .button { width: 30%; }
-.frame.desktop .sketch.form .button, .frame.website .sketch.form .button { width: 100%; }
+.dev:not(.phone) .sketch.grid .card { width: 30%; height: 30%; }
+.dev:not(.phone) .sketch.grid .banner { height: 30%; }
+.dev:not(.phone) .sketch .tick, .dev:not(.phone) .sketch .alert { width: 20%; }
+.dev:not(.phone) .sketch .alert::after { font-size: calc(var(--w) * .07); }
+.dev:not(.phone) .sketch .tick::after { border-width: 0 calc(var(--w) * .006) calc(var(--w) * .006) 0; }
+.dev:not(.phone) .sketch.form { padding: 4% 26% 0; }
+.dev:not(.phone) .sketch .row { margin-inline-start: 8%; }
+.dev:not(.phone) .sketch .row::before { inset-inline-start: -10%; width: 7%; }
+.dev:not(.phone) .sketch .picture { height: 46%; }
+.dev:not(.phone) .sketch .button { width: 30%; }
+.dev:not(.phone) .sketch.form .button { width: 100%; }
+.dev:not(.phone) .sketch .b:not(.tick):not(.alert) { border-radius: calc(var(--w) * .006); }
 
 /* ---------- when the page refuses ---------- */
 
-.problems { max-width: 720px; margin: 40px auto; padding: 32px 36px; background: #fff; border-radius: 14px;
-  border-top: 6px solid var(--red); font-family: var(--font); }
+.problems { max-width: 720px; margin: 40px auto; padding: 32px 36px; background: #fff; color: #14161f; border-radius: 14px;
+  border-top: 6px solid #e5484d; font-family: var(--font); }
 .problems h1 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
-.problems p { color: var(--mute); font-size: 14px; margin-bottom: 18px; }
-.problems ol { padding-left: 22px; font-size: 14px; line-height: 1.55; }
+.problems p { color: #6b7080; font-size: 14px; margin-bottom: 18px; }
+.problems ol { padding-inline-start: 22px; font-size: 14px; line-height: 1.55; }
 .problems li { margin-bottom: 6px; }

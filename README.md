@@ -4,16 +4,17 @@
 
 **Turn an app idea into a storyboard your client can approve.**
 
-An agent skill that draws an app's **screens as a storyboard**: numbered frames left to right like a comic
-strip, a short caption under each ("Types email and password, taps Sign in"), blue arrows for the normal
-path, and red dashed frames for what happens when something goes wrong. An approved design shows in every frame from the start; with no design yet, sketches before you build and real
-screenshots after. The client approves it before a line of code is written.
+An agent skill that draws an app's **screens as a storyboard**: one screen a page, shown big, with a marker
+where the user taps; beside it the screen's number and what the user sees and does; under it the story's
+other screens. What happens when something goes wrong gets its own red page. The pages wear **the app's own
+colours**. An approved design shows in every frame from the start; with no design yet, sketches before you
+build and real screenshots after. The client approves it before a line of code is written.
 
 The skill is the folder [`skills/frameflow/`](skills/frameflow/): its instructions,
 [`SKILL.md`](skills/frameflow/SKILL.md), and a page template that draws the storyboard in any browser.
 **Nothing to install.**
 
-**Version 0.2.0** · 67 tests · reviewed over 4 rounds by a second AI · [how it was tested](TESTING.md)
+**Version 0.3.0** · 58 tests · 0.1.0 reviewed over 4 rounds by a second AI · [how it was tested](TESTING.md)
 
 ---
 
@@ -25,16 +26,18 @@ In your project's `docs/app-flow/`:
 |---|---|
 | `app-flow.md` | the storyboard as short, readable text: the master copy any agent can read and update |
 | `storyboard.html` | the page that draws it (open it in Chrome, Edge or Safari) |
-| `<Project> - App flow v1.pdf` | the PDF for the client: a cover, then one page per user story |
+| `<Project> - App flow v1.pdf` | the PDF for the client: a cover, then one page per screen |
 | `screenshots/` | after building: the real screens |
 
 The PDF holds:
 
-1. **A cover**: the app's name, one line about it, **Draft for review** or **Approved** with the date, the
-   stories with their pages, and who it is for.
-2. **One page per user story** ("Signing in", "Ordering food"): the screens in order, each with its caption,
-   the arrows between them, and every "if it goes wrong" frame with its way back. A long story continues on
-   a "part 2" page.
+1. **A cover**: the app's first screen, its name, one line about it, **Draft for review** or **Approved**
+   with the date, the stories with their pages, and who it is for.
+2. **One page per screen**, story by story ("Signing in", "Ordering food"): the screen big, a marker where
+   the user taps, its number, what the user **sees** and **does**, and the story's other screens underneath.
+3. **A red page for each "if it goes wrong"**, right after its screen, with the way back.
+
+The pages are A4 lying on its side, in the app's own background and button colour.
 
 Four frames: **phone**, **tablet**, **desktop window** and **browser** (a website can also show its phone
 version). English by default; **Arabic** turns the whole page right to left.
@@ -49,7 +52,8 @@ version). English by default; **Arabic** turns the whole page right to left.
    caption does not fit, the page refuses with numbered problems instead of a messy drawing.
 4. It makes the PDF (with the Chrome or Edge you already have), or tells you the exact Print settings.
 5. **The client approves**, or asks for changes: each round is a new version (v1, v2…).
-6. **After building**, it swaps the sketches for real screenshots, after warning you to use demo data.
+6. **After building**, it swaps the sketches for real screenshots with their tap points, after warning you
+   to use demo data.
 
 ## Install
 
@@ -73,8 +77,8 @@ cp -R frameflow/skills/frameflow ~/.claude/skills/
 
 ```bash
 cd frameflow
-rm -f dist/frameflow.zip && mkdir -p dist
-(cd skills && zip -r -X ../dist/frameflow.zip frameflow -x '*.DS_Store')
+mkdir -p dist
+(cd skills && zip -FS -r -X ../dist/frameflow.zip frameflow -x '*.DS_Store')
 ```
 
 **GitHub Copilot, Cursor and ChatGPT**: where your tool supports agent skills, install the same folder.
@@ -96,14 +100,18 @@ reload.
 # Food Delivery App
 
 - kind: phone
+- stage: #f3f4f6
+- accent: #f2541b
 - version: 1
 
 ## Ordering food
 From choosing a restaurant to the order confirmed.
 
-1. Home [grid]: Sees nearby restaurants, taps one. → 2
-2. Pay [form]: Enters the card, taps "Pay now". → 3
-   ! Card refused: Sees "Payment failed", taps "Try again". → 2
+1. Home: Sees nearby restaurants. Taps one. → 2
+   shot: screenshots/1-1-home.png
+   tap: 50%, 28% Taps a restaurant
+2. Pay [form]: Sees the card form. Enters the card, taps "Pay now". → 3
+   ! Card refused: Sees "Payment failed". Taps "Try again". → 2
 3. Confirmed [done]: Sees the order number.
 ```
 
@@ -111,16 +119,17 @@ The full shape is in [`references/storyboard-format.md`](skills/frameflow/refere
 
 ## How it was tested
 
-64 automated tests (Node.js 18, 20 and 22), 8 planted bugs all caught, and 4 rounds of independent review
-by a second AI (OpenAI Codex) that found 11 problems, all fixed before release. The full record, and what has
-not been tried yet, is in [`TESTING.md`](TESTING.md).
+Version 0.1.0: 64 automated tests (Node.js 18, 20 and 22), 8 planted bugs all caught, and 4 rounds of
+independent review by a second AI (OpenAI Codex) that found 11 problems, all fixed before release. Version
+0.3.0 redrew the pages and has 58 tests; its new drawing has not had a second review yet. The full record,
+and what has not been tried yet, is in [`TESTING.md`](TESTING.md).
 
 ## Limits
 
 - Up to 12 stories and 24 screens a story; up to two "if it goes wrong" frames under a screen.
 - English and Arabic.
-- The look is fixed: a white page, a thin blue line on top, Plus Jakarta Sans. Your own name goes on the
-  cover; one small "Made with frameflow · by WorkSpace Labs" line sits at the bottom of the last page.
+- The page structure and type are fixed (Plus Jakarta Sans); the two colours are your app's. Your own name
+  goes on the cover; one small "Made with frameflow · by WorkSpace Labs" line sits at the bottom of the last page.
 
 ## Working on frameflow
 

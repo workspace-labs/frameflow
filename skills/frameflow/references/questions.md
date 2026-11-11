@@ -74,11 +74,11 @@ The workflow tells you the steps, not the screens: confirm the screens with the 
 
 Before drawing anything, say the plan back in your own words and wait for their yes:
 
-> *"I'll draw 3 pages: **Signing in** (3 screens) · **Ordering food** (6 screens, with 2 things that can go
-> wrong on Pay) · **Settings** (2 screens). Is that right?"*
+> *"I'll draw 3 stories: **Signing in** (3 screens) · **Ordering food** (6 screens, with 2 things that can go
+> wrong on Pay) · **Settings** (2 screens). One screen a page, so 13 pages and the cover. Is that right?"*
 
 They can keep it, merge two stories, split one, rename them or change the order. Draw only after *"yes,
-that's it"*. A story longer than one page continues on a "part 2" page: say so in the read-back.
+that's it"*. Every screen and every "if it goes wrong" is its own page: say the page count in the read-back.
 
 ## After building
 

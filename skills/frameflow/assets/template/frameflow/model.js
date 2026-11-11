@@ -4,15 +4,18 @@
 (function (root) {
   "use strict";
 
-  var VERSION = "0.2.0";
+  // The colour rules live in theme.js: loaded before this file on the page, required in Node's tests.
+  var colours = (root.Frameflow && root.Frameflow.theme) || require("./theme.js");
+
+  var VERSION = "0.3.0";
 
   var KINDS = ["phone", "tablet", "desktop", "website"];
   var LANGUAGES = ["en", "ar"];
   var SKETCHES = ["form", "list", "grid", "detail", "done", "message", "blank"];
-  var SETTINGS = ["kind", "language", "client", "by", "about", "version", "status", "approved", "date", "phone-version"];
+  var SETTINGS = ["kind", "language", "client", "by", "about", "version", "status", "approved", "date", "phone-version", "stage", "accent", "crop"];
   var LIMITS = {
-    projectName: 60, storyTitle: 48, storySummary: 140, screenName: 24, caption: 90,
-    errorCaption: 70, person: 60, about: 200, stories: 12, screens: 24, errorsPerScreen: 2
+    projectName: 60, storyTitle: 48, storySummary: 140, screenName: 24, caption: 160,
+    errorCaption: 140, person: 60, about: 200, stories: 12, screens: 24, errorsPerScreen: 2, markLabel: 28, crop: 25
   };
   var PICTURE = /\.(png|jpe?g|webp)$/i;
 
@@ -21,10 +24,19 @@
   var SETTING = /^\s*[-*]\s+([A-Za-z][A-Za-z-]*)\s*:\s*(.*?)\s*$/;
   var DIGIT = "0-9\u0660-\u0669\u06F0-\u06F9"; // 0-9, Arabic ٠-٩ and Persian ۰-۹
   var SCREEN = new RegExp("^([" + DIGIT + "]+)\\.\\s+(.*)$");
-  var SCREEN_BODY = /^(.+?)\s*\[\s*([A-Za-z]+)\s*\]\s*:\s*(.+)$/;
+  // The [sketch] is optional: a screen that shows a picture needs none.
+  var SCREEN_BODY = /^(.+?)\s*(?:\[\s*([A-Za-z]+)\s*\])?\s*:\s*(.+)$/;
   var ERROR = /^\s*!\s*(.*)$/;
   var ERROR_BODY = /^(.+?)\s*:\s*(.+)$/;
   var SHOT = /^\s+(shot|phone-shot)\s*:\s*(.*?)\s*$/i;
+  // tap: where the user taps, look: where to look. Two numbers (percent of the picture from its left and its
+  // top), then an optional short label.
+  var MARK = /^\s+(tap|look)\s*:\s*(.*?)\s*$/i;
+  var MARK_BODY = new RegExp("^([" + DIGIT + "]+(?:\\.[" + DIGIT + "]+)?)\\s*%?\\s*,\\s*([" + DIGIT + "]+(?:\\.[" + DIGIT + "]+)?)\\s*%?(?:\\s+(.+))?$");
+  var CROP_PART = /^(top|bottom)\s+(\d+(?:\.\d+)?)\s*%?$/i;
+  // A caption that starts with this word is split: its first sentence is what the user sees, the rest what they do.
+  var SEES = { en: /^sees\s+/i, ar: /^(?:يرى|ترى)\s+/ };
+  var SENTENCE_END = /[.!?\u061F]["\u201D\u2019\u00BB)]*\s+/;
   // The last arrow on a line (the greedy start runs up to it) and everything after it. All of that must be a
   // screen number or "end", or the line is refused. Arrows earlier on the line stay in the caption.
   var TARGET = /^([\s\S]*)(→|->)([\s\S]*)$/;
@@ -113,6 +125,11 @@
         continue;
       }
 
+      if ((m = MARK.exec(raw))) {
+        readMark(n, m[1].toLowerCase(), m[2]);
+        continue;
+      }
+
       if ((m = ERROR.exec(raw))) {
         readError(n, m[1]);
         continue;
@@ -149,13 +166,17 @@
       var parts = SCREEN_BODY.exec(body);
       lastItem = null;
       if (!parts) {
-        problem(n, "Screen " + number + " is missing its sketch or caption. Write it like: " +
-          number + ". Home [grid]: Sees the restaurants, taps one.");
+        problem(n, "Screen " + number + " is missing its caption. Write it like: " +
+          number + ". Home [grid]: Sees the restaurants. Taps one.");
+        return;
+      }
+      if (/\]$/.test(parts[1])) {
+        problem(n, "Screen " + number + ": the sketch in [ ] must be one word, like [grid]. Use one of: " + SKETCHES.join(", ") + ".");
         return;
       }
       var target = splitTarget(n, parts[3]);
       var screen = {
-        number: number, name: parts[1].trim(), sketch: parts[2].toLowerCase(), caption: target.rest,
+        number: number, name: parts[1].trim(), sketch: (parts[2] || "blank").toLowerCase(), caption: target.rest,
         to: target.to, line: n, shot: "", phoneShot: "", errors: []
       };
       story.screens.push(screen);
@@ -179,6 +200,27 @@
       var error = { name: parts[1].trim(), caption: target.rest, to: target.to, badTarget: target.bad, line: n, shot: "" };
       lastScreen.errors.push(error);
       lastItem = error;
+    }
+
+    function readMark(n, key, body) {
+      if (!lastItem) {
+        problem(n, "A " + key + ": line must sit right under the screen (or the ! line) it belongs to.");
+        return;
+      }
+      if (lastItem[key]) {
+        problem(n, "This screen already has a " + key + ": line. Keep one.");
+        return;
+      }
+      var parts = MARK_BODY.exec(body);
+      var x = parts ? Number(westernDigits(parts[1])) : -1;
+      var y = parts ? Number(westernDigits(parts[2])) : -1;
+      if (!parts || x > 100 || y > 100) {
+        problem(n, "Write a " + key + ": line as two numbers from 0 to 100 (how far from the picture's left edge, then from its top, " +
+          "in percent), then a short label if you want one: " + key + ": 86%, 91% " + (key === "tap" ? "Taps Checkout" : "The new total") +
+          ". It says " + quote(body) + ".");
+        return;
+      }
+      lastItem[key] = { x: x / 100, y: y / 100, label: (parts[3] || "").trim(), line: n };
     }
 
     function readShot(n, key, path) {
@@ -242,6 +284,34 @@
 
     p.date = readDate(s.date, settingLines.date, "date");
 
+    // The app's own two colours. Without them the storyboard wears frameflow's own.
+    p.stage = readColour("stage");
+    p.accent = readColour("accent");
+    var stage = p.stage || colours.DEFAULT.stage;
+    var accent = p.accent || colours.DEFAULT.accent;
+    if (colours.contrast(stage, accent) < colours.MIN_CONTRAST) {
+      problem(settingLines.accent || settingLines.stage, "The accent colour " + accent + " cannot be seen on the stage colour " + stage +
+        ": they are too close. Use the app's main button colour as accent and its background as stage, or leave one out.");
+    }
+
+    // How much of every screenshot's top and bottom to cut off (the device's own status and navigation bars).
+    p.crop = { top: 0, bottom: 0 };
+    if (s.crop !== undefined) {
+      var seen = {};
+      var cropOk = s.crop.split(",").every(function (part) {
+        var c = CROP_PART.exec(part.trim());
+        if (!c || seen[c[1].toLowerCase()] || Number(c[2]) > LIMITS.crop) return false;
+        seen[c[1].toLowerCase()] = true;
+        p.crop[c[1].toLowerCase()] = Number(c[2]) / 100;
+        return true;
+      });
+      if (!cropOk) {
+        p.crop = { top: 0, bottom: 0 };
+        problem(settingLines.crop, "crop says how much of every screenshot's top and bottom to cut off, up to " + LIMITS.crop +
+          "% each: - crop: top 4%, bottom 6% (or one of them). It says " + quote(s.crop) + ".");
+      }
+    }
+
     p.phoneVersion = false;
     if (s["phone-version"] !== undefined) {
       var pv = s["phone-version"].toLowerCase();
@@ -274,6 +344,7 @@
         checkPicture(screen.shotLine, screen.shot);
         checkPicture(screen.phoneShotLine, screen.phoneShot);
         if (screen.phoneShot && !p.phoneVersion) problem(screen.phoneShotLine, "phone-shot: needs - phone-version: yes in the settings.");
+        checkMarks(screen);
 
         screen.errors.forEach(function (error) {
           tooLong(error.line, '"' + error.name + '"', error.name, LIMITS.screenName);
@@ -282,12 +353,30 @@
           if (error.to === null && !error.badTarget) problem(error.line, '"' + error.name + '" needs a way out: end the line with → and a screen number, or → end.');
           else if (typeof error.to === "number" && (error.to < 1 || error.to > count)) problem(error.line, '"' + error.name + '" goes back to screen ' + error.to + ", but this story has " + count + " screens.");
           checkPicture(error.shotLine, error.shot);
+          checkMarks(error);
         });
       });
     });
 
     function tooLong(line, label, value, limit) {
       if (value && [...value].length > limit) problem(line, label + " is " + [...value].length + " characters. Keep it to " + limit + ".");
+    }
+
+    function readColour(key) {
+      if (s[key] === undefined) return "";
+      var value = colours.hex(s[key]);
+      if (!value) problem(settingLines[key], key + " must be a colour written like #0a0e0d or #fff. It says " + quote(s[key]) + ".");
+      return value;
+    }
+
+    // A tap or look point is a place on the picture, so it needs the picture.
+    function checkMarks(item) {
+      ["tap", "look"].forEach(function (key) {
+        var mark = item[key];
+        if (!mark) return;
+        if (!item.shot) problem(mark.line, key + ": marks a point on the screen's picture. Add its shot: line first, or remove the " + key + ": line.");
+        tooLong(mark.line, "The " + key + ": label", mark.label, LIMITS.markLabel);
+      });
     }
 
     function readDate(value, line, key) {
@@ -316,13 +405,25 @@
     }
   }
 
+  /* A caption → what the user sees and what they do. "Sees the menu. Taps Checkout." gives both; a caption that
+     does not start with "Sees" is all "does", as storyboards written before 0.3.0 are. */
+  function splitCaption(caption, language) {
+    var text = String(caption || "").trim();
+    var start = (SEES[language] || SEES.en).exec(text);
+    if (!start) return { sees: "", does: text };
+    var rest = text.slice(start[0].length);
+    var end = SENTENCE_END.exec(rest);
+    var sees = end ? rest.slice(0, end.index + end[0].length).trim() : rest;
+    return { sees: sees.charAt(0).toUpperCase() + sees.slice(1), does: end ? rest.slice(end.index + end[0].length).trim() : "" };
+  }
+
   function quote(text) {
     var t = String(text).trim();
     if ([...t].length > 60) t = [...t].slice(0, 57).join("") + "…";
     return '"' + t + '"';
   }
 
-  var api = { VERSION: VERSION, KINDS: KINDS, SKETCHES: SKETCHES, LIMITS: LIMITS, parse: parse };
+  var api = { VERSION: VERSION, KINDS: KINDS, SKETCHES: SKETCHES, LIMITS: LIMITS, parse: parse, splitCaption: splitCaption };
   root.Frameflow = root.Frameflow || {};
   root.Frameflow.model = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

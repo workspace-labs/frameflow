@@ -1,13 +1,14 @@
 ---
 name: frameflow
-description: "Use when someone wants an app flow: the screens a user sees and taps in a phone app, tablet app, desktop app or website, drawn as a numbered storyboard (frames left to right, a caption under each, and what happens when something goes wrong) for a client to approve. When the screens are already designed and approved it shows those designs from the first version; otherwise it draws sketches until the app is built, then swaps in real screenshots. Also when asked for a user flow, a screen flow or a storyboard of an app's screens, or to update one. Not for how a whole process works or who does what (that is a workflow or swimlane), and not for designing or building the screens themselves."
+description: "Use when someone wants an app flow: the screens a user sees and taps in a phone app, tablet app, desktop app or website, drawn as a numbered storyboard (one big screen a page with where the user taps, what they see and do beside it, and what happens when something goes wrong) for a client to approve. When the screens are already designed and approved it shows those designs from the first version; otherwise it draws sketches until the app is built, then swaps in real screenshots. Also when asked for a user flow, a screen flow or a storyboard of an app's screens, or to update one. Not for how a whole process works or who does what (that is a workflow or swimlane), and not for designing or building the screens themselves."
 ---
 
 # frameflow
 
-An app flow, drawn as a storyboard: numbered screens left to right like a comic strip, a short caption under
-each, blue arrows for the normal path, red dashed frames for what happens when something goes wrong. The
-client approves it before anything is built. If the screens are already designed and approved, the frames show
+An app flow, drawn as a storyboard: one screen a page, shown big, with a marker where the user taps; beside it
+the screen's number and what the user **sees** and **does**; under it the story's other screens, small, with
+the current one lit. What happens when something goes wrong gets its own red page. The pages wear the app's
+own colours. The client approves it before anything is built. If the screens are already designed and approved, the frames show
 those designs from the very first version; if not, they show sketches until the app is built and real
 screenshots replace them.
 
@@ -50,9 +51,9 @@ wrong, where it ends. **Never invent a screen, a tap or an error.** Anything unk
 
 ## 3. Read it back
 
-Say the plan back and wait for *"yes, that's it"*: the stories, one page each by default, with their screen
-counts and what can go wrong. The person may merge, split, rename or reorder. A story longer than one page
-continues on a "part 2" page; say so.
+Say the plan back and wait for *"yes, that's it"*: the stories, with their screen counts and what can go
+wrong. The person may merge, split, rename or reorder. Every screen gets its own page, and so does every
+"if it goes wrong": say how many pages that makes.
 
 ## 4. Write the text copy
 
@@ -61,14 +62,35 @@ Write `docs/app-flow/app-flow.md` in the shape in
 the master copy. English unless the person asks for Arabic (`- language: ar`: the whole page reads right to
 left). Start at version 1 and `status: draft`.
 
+**Follow the app.** The storyboard wears the app's own two colours: set `- stage:` to the app's background
+colour and `- accent:` to its main button colour, as hex (`#0a0e0d`). Take them from the approved design or
+the app itself; never invent them. No design yet: leave both out and the page wears frameflow's own. The
+frame follows the kind (phone, tablet, window, browser); the page's type and structure stay frameflow's.
+
+**Write each caption as what the user sees, then what they do:** `Sees the dishes and prices. Adds dishes,
+taps "Checkout".` The first sentence after "Sees" is printed under SEES, the rest under DOES.
+
 **An approved design comes first.** When the person has an approved design, every screen gets a `shot:`
 line from version 1: a picture of that approved screen, with demo data. Take them yourself with a tool you
 already have (a browser you can drive, at the phone's real size and 2× or 3× sharp), or ask the person for
 them; save them in `docs/app-flow/screenshots/`, named by story and screen. Never leave grey sketches when an
 approved design exists. No approved design: sketches, as normal.
 
+**Show where the user taps.** Under every screen that has a `shot:` and leads somewhere, add a `tap:` line:
+how far the tap is from the picture's left edge and from its top, in percent, then two or three words
+(`tap: 92%, 56% Taps Checkout`). Measure it, do not guess: read the button's place from the page you
+captured, or from the picture. On a button, put the point on the button's lower right corner, so its words
+stay readable. A screen where the user only looks gets `look:` the same way (`look: 17%, 12% The total`).
+If the pictures show the device's own status or navigation bar, cut it off every picture with
+`- crop: top 4%, bottom 6%`.
+
 - **A storyboard already there?** If `docs/app-flow/` already has `app-flow.md` or `storyboard.html`, read
   them first and update them. Never write over someone's file with a new one.
+- **Made with an older frameflow?** If `docs/app-flow/frameflow/` has no `theme.js`, the storyboard was drawn
+  in the old look. Tell the person it will be redrawn in the new one, then replace the `frameflow/` folder
+  and `storyboard.html` with this skill's (they are the template's files, not the person's) and put the text
+  of `app-flow.md` back into the page. The text copy reads as it is; add colours, `Sees …` captions and
+  `tap:` lines as you update it.
 - **"No text file"?** Respect it: do not save `app-flow.md`. The same text then lives only inside
   `storyboard.html` (its app-flow block, next step), and that block is the master: read it, change it there,
   and never copy the template over that page again. Everything below that says `app-flow.md` means that
@@ -79,7 +101,8 @@ approved design exists. No approved design: sketches, as normal.
 1. **Copy** into `docs/app-flow/` every file of this skill's `assets/template/` folder that is not there yet:
    `storyboard.html`, and the `frameflow/` folder with everything in it. Copy the files; never retype them.
    Never replace a file that is already there: on an update, copy only what is missing (for example, only
-   `app-flow.md` is there: copy the page and the folder).
+   `app-flow.md` is there: copy the page and the folder). The one exception is a storyboard made with an
+   older frameflow (step 4).
 2. In `docs/app-flow/storyboard.html`, replace only the text between
    `<script type="text/markdown" id="app-flow">` and `</script>` with the exact text of `app-flow.md`,
    starting at the left edge. Change nothing else in the template: the look is fixed.
@@ -87,7 +110,8 @@ approved design exists. No approved design: sketches, as normal.
    `app-flow.md` by the line numbers it gives, copy it in again, check again. Never edit the template to
    silence a refusal.
 4. Look at the pages if you can. Does every screen match what the person said? Is every "if it goes wrong"
-   there? With an approved design: is every frame its real screen, and can its words be read?
+   there? With an approved design: is every frame its real screen, and can its words be read? Is every tap
+   marker on the thing the user taps, with its label clear of the words around it?
 
 ## 6. The client's approval
 
@@ -120,8 +144,9 @@ the approved design still change if what was built looks different.) Then:
 
 - `app-flow.md` is the master. When the page and the file disagree, the file wins: copy it into the page
   again. (With "no text file", the page's app-flow block is the master.)
-- Never change the template's layout, colours or fonts. The person's own name goes in `- by:`; the page
-  carries one small "Made with frameflow · by WorkSpace Labs" line on its last page.
+- Never change the template's layout or fonts. Colours come only from `stage` and `accent`, the app's own;
+  no brand logo goes on the pages. The person's own name goes in `- by:`; the page carries one small "Made
+  with frameflow · by WorkSpace Labs" line on its last page.
 - Never install anything without the person's yes. Ask once; never nag.
 - No network: screenshots are files next to the page, never web links.
 - Keep the person's words: captions say what the user sees and does, in plain language.
@@ -131,10 +156,12 @@ the approved design still change if what was built looks different.) Then:
 Say these when they matter:
 
 - Up to 12 stories and 24 screens a story; up to two "if it goes wrong" frames under a screen.
-- How many screens fit on a page: two big phones (one row), six tablets (two rows of three), six desktop or
-  website screens (three rows of two). A longer story continues on a "part 2" page.
+- One screen a page, on A4 lying on its side. A story's page count is its screens plus its "if it goes
+  wrong" lines; the strip under a wide screen shows five of the story's screens at a time.
+- `tap:` and `look:` need the screen's picture: a sketch has no real place to point at.
 - English and Arabic only.
 - Each website screen is a browser window; `phone-version: yes` adds a small phone over its corner.
+- For a desktop app or a website, capture the content only: the page draws the window's or browser's top bar.
 - Never write the characters `</script>` in `app-flow.md`: they would end the page's copy early.
 
 ## Files
@@ -144,5 +171,5 @@ Say these when they matter:
 | `references/questions.md` | the questions to ask, how to read a workflow, the read-back |
 | `references/storyboard-format.md` | the shape of `app-flow.md`, and what the page refuses |
 | `references/pdf.md` | checking the drawn page and making the PDF on any computer |
-| `assets/template/` | the page (`storyboard.html`) and its `frameflow/` folder: the look, the reading and drawing code, and the fonts (SIL Open Font License) |
+| `assets/template/` | the page (`storyboard.html`) and its `frameflow/` folder: the look, the colour rules, the reading and drawing code, and the fonts (SIL Open Font License) |
 | `examples/` | complete text copies: a phone app, a phone app in Arabic, a website with its phone version, a desktop app, a tablet app |

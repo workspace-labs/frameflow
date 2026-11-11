@@ -1,20 +1,16 @@
 /* frameflow: draws the pages. The only file that touches the page.
-   Reads the text copy from <script type="text/markdown" id="app-flow">, asks model.js to read it and
-   layout.js to place it, then builds the pages. When something is wrong, or a word does not fit, it shows
-   the numbered problems instead of a messy page.
+   Reads the text copy from <script type="text/markdown" id="app-flow">, asks model.js to read it, theme.js for
+   the colours and layout.js to place it, then builds the pages. When something is wrong, or a word does not
+   fit, it shows the numbered problems instead of a messy page.
    When finished it sets <html data-frameflow="ready"> or "refused", so an agent can check before printing. */
 (function () {
   "use strict";
 
   var F = window.Frameflow;
-  var SVG = "http://www.w3.org/2000/svg";
-  // The cover's approved boxes. Short covers sit exactly here; a long list or long details push the blocks
-  // above them upward, as far as heroTopMin, instead of running off the page. A box that grows keeps
-  // `headroom` above its first line for Arabic marks.
-  var COVER = { heroTopMin: 100, heroTop: 250, heroH: 316, labelTop: 596, listTop: 622, listBottom: 922,
-    metaTop: 944, metaBottom: 1074, headroom: 6 };
-  var coverParts = null;
+  var L = F.layout;
   var words = F.strings.words("en");
+  // Every device frame drawn, with the room it may use: sized once its picture's shape is known (settleFrames).
+  var frames = [];
 
   function start() {
     var source = document.getElementById("app-flow");
@@ -34,230 +30,265 @@
 
   function draw(board) {
     var p = board.project;
-    var rtl = p.language === "ar";
-    var W = words;
-    var plan = F.layout.plan(board);
-    var total = plan.pages.length;
+    var plan = L.plan(board);
     var html = document.documentElement;
+    var ctx = { board: board, plan: plan, W: words, rtl: p.language === "ar", total: plan.pages.length, sheet: null };
 
     html.lang = p.language;
-    html.dir = rtl ? "rtl" : "ltr";
-    document.title = p.name + " · " + W.appFlow;
+    html.dir = ctx.rtl ? "rtl" : "ltr";
+    document.title = p.name + " · " + words.appFlow;
+    paint(html, F.theme.theme(p.stage, p.accent));
 
     var book = el("main", "book");
-    plan.pages.forEach(function (page, i) {
-      var sheet = el("section", "page");
-      sheet.appendChild(el("div", "topline"));
-      var ctx = { board: board, plan: plan, W: W, rtl: rtl, sheet: sheet, total: total };
-      if (page.type === "cover") cover(ctx);
-      else storyPage(ctx, page, plan.pages[i + 1]);
-      if (page.type !== "cover") footer(ctx, page.number, page.number === total);
-      book.appendChild(sheet);
+    plan.pages.forEach(function (page) {
+      ctx.sheet = el("section", "page");
+      if (page.type === "cover") cover(ctx, page);
+      else screenPage(ctx, page);
+      book.appendChild(ctx.sheet);
     });
-    document.body.appendChild(text("div", "print-hint", W.printHint));
+    document.body.appendChild(text("div", "print-hint", words.printHint));
     document.body.appendChild(book);
   }
 
-  function cover(ctx) {
+  // The app's colours, handed to frameflow.css.
+  function paint(html, t) {
+    // --acc turns red on an "if it goes wrong" page; --app stays the app's colour (a sketch's button).
+    var vars = { bg: t.bg, ink: t.ink, mute: t.mute, line: t.line, acc: t.acc, app: t.acc, "acc-rgb": t.accRgb, "on-acc": t.onAcc,
+      red: t.red, "red-rgb": t.redRgb, "on-red": t.onRed, bezel: t.bezel, "bezel-line": t.bezelLine, glow: t.glow, "glow-red": t.glowRed };
+    Object.keys(vars).forEach(function (k) { html.style.setProperty("--" + k, vars[k]); });
+    html.classList.toggle("dark", t.dark);
+  }
+
+  function cover(ctx, page) {
     var p = ctx.board.project;
     var W = ctx.W;
-    var s = ctx.sheet;
-    s.classList.add("cover");
-    if (p.by) place(ctx, text("div", "brand", p.by), { x: 56, y: 44, w: 681, h: 24 });
+    ctx.sheet.classList.add("cover");
 
-    // The name, the line about it and the status flow as one block that sits just above the stories.
-    var hero = el("div", "hero");
-    hero.appendChild(text("div", "label", W.appFlow));
-    hero.appendChild(accented("h1", "title", p.name));
-    if (p.about) hero.appendChild(text("p", "about", q(ctx, p.about)));
-    hero.appendChild(p.status === "approved"
+    var first = ctx.board.stories[0].screens[0];
+    device(ctx, p.kind, first, page.device, "tilt");
+
+    var count = ctx.board.stories.length;
+    var col = el("div", "covtext" + (count > 9 ? " full" : ""));
+    col.appendChild(text("div", "label", W.appFlow));
+    var size = [...p.name].length <= 10 ? "xl" : [...p.name].length <= 18 ? "l" : [...p.name].length <= 32 ? "m" : "s";
+    col.appendChild(text("h1", "title " + size, p.name));
+    if (p.about) col.appendChild(text("p", "about", q(ctx, p.about)));
+    col.appendChild(p.status === "approved"
       ? text("div", "pill approved", F.strings.fill(W.approvedOn, { date: F.strings.day(p.approved, p.language) }))
       : text("div", "pill draft", W.draft));
-    place(ctx, fit(hero, W.fitHero, p.line), { x: 56, y: COVER.heroTop, w: 681, h: COVER.heroH });
 
-    var label = place(ctx, text("div", "label", W.stories), { x: 56, y: COVER.labelTop, w: 681, h: 16 });
-    var list = el("ol", "contents" + (ctx.board.stories.length > 9 ? " tight" : ""));
+    var list = el("ol", "contents" + (count > 9 ? " tighter" : count > 6 ? " tight" : ""));
     var firstPage = {};
     ctx.plan.pages.forEach(function (pg) {
-      if (pg.type === "story" && !firstPage[pg.storyIndex]) firstPage[pg.storyIndex] = pg.number;
+      if (pg.type === "screen" && !firstPage[pg.storyIndex]) firstPage[pg.storyIndex] = pg.number;
     });
     ctx.board.stories.forEach(function (story, i) {
       var li = el("li");
-      li.appendChild(text("span", "n", String(i + 1)));
-      li.appendChild(text("span", "t", story.title));
-      li.appendChild(text("span", "c", F.strings.screens(story.screens.length, p.language)));
-      li.appendChild(text("span", "pg", F.strings.fill(W.page, { n: firstPage[i] })));
+      li.appendChild(text("b", "", String(i + 1)));
+      li.appendChild(text("span", "", story.title));
+      li.appendChild(text("em", "", F.strings.screens(story.screens.length, p.language) + " · " + F.strings.fill(W.page, { n: firstPage[i] })));
       list.appendChild(li);
     });
-    var lastStory = ctx.board.stories[ctx.board.stories.length - 1];
-    place(ctx, fit(list, W.fitStories, lastStory.line), { x: 56, y: COVER.listTop, w: 681, h: COVER.listBottom - COVER.listTop });
+    var stories = el("div", "covlist");
+    stories.appendChild(text("div", "label", W.stories));
+    stories.appendChild(list);
+    col.appendChild(stories);
+    place(ctx, fit(col, W.fitCover, p.line), page.text);
 
-    var meta = el("dl", "meta");
-    function row(label, value) {
-      if (!value) return;
-      meta.appendChild(text("dt", "", label));
-      meta.appendChild(text("dd", "", value));
-    }
-    row(W.preparedFor, p.client);
-    row(W.preparedBy, p.by);
-    row(W.kind, W.kinds[p.kind]);
-    row(W.version, "v" + p.version);
-    row(W.date, F.strings.day(p.date, p.language));
+    var bits = [W.kinds[p.kind], "v" + p.version, F.strings.day(p.date, p.language),
+      p.client && F.strings.fill(W.preparedFor, { t: p.client }), p.by && F.strings.fill(W.preparedBy, { t: p.by })];
     var lines = p.lines;
-    var metaLine = lines.client || lines.by || lines.kind || lines.version || lines.date;
-    place(ctx, fit(meta, W.fitMeta, metaLine), { x: 56, y: COVER.metaTop, w: 681, h: COVER.metaBottom - COVER.metaTop });
-    coverParts = { hero: hero, label: label, list: list, meta: meta, line: p.line };
+    place(ctx, fit(dotted("div", "meta", bits), W.fitMeta, lines.client || lines.by || p.line), page.meta);
   }
 
-  /* After the fonts load: the details and the list keep their approved boxes when they fit, and otherwise
-     grow upward from the cover's bottom edge, pushing the name block up. Every box ends up at least as tall as
-     what is in it, so nothing is clipped at any edge. Refuses only when the name block runs out of room. */
-  function settleCover() {
-    var c = coverParts;
-    if (!c) return [];
-    var metaH = Math.max(COVER.metaBottom - COVER.metaTop, natural(c.meta) + COVER.headroom);
-    var metaTop = COVER.metaBottom - metaH;
-    var listBottom = Math.min(COVER.listBottom, metaTop - (COVER.metaTop - COVER.listBottom));
-    var listTop = Math.min(COVER.listTop, listBottom - natural(c.list));
-    var labelTop = listTop - (COVER.listTop - COVER.labelTop);
-    var heroBottom = labelTop - (COVER.labelTop - COVER.heroTop - COVER.heroH);
-    var room = heroBottom - COVER.heroTopMin;
-    var heroH = natural(c.hero) + COVER.headroom;
-    setBox(c.meta, metaTop, metaH);
-    setBox(c.list, listTop, listBottom - listTop);
-    setBox(c.label, labelTop, 16);
-    if (heroH > room) {
-      setBox(c.hero, COVER.heroTopMin, Math.max(0, room));
-      return [{ line: c.line, text: words.fitCover }];
-    }
-    heroH = Math.max(heroH, Math.min(COVER.heroH, room));
-    setBox(c.hero, heroBottom - heroH, heroH);
-    return [];
-  }
-
-  function natural(node) {
-    node.style.height = "auto";
-    return node.getBoundingClientRect().height;
-  }
-
-  function setBox(node, top, height) {
-    node.style.top = top + "px";
-    node.style.height = height + "px";
-  }
-
-  function storyPage(ctx, page, nextPage) {
+  function screenPage(ctx, page) {
+    var p = ctx.board.project;
     var W = ctx.W;
     var story = page.story;
-    var stories = ctx.board.stories.length;
-    var label = F.strings.fill(W.story, { n: page.storyIndex + 1, m: stories });
-    if (page.parts > 1) label += " · " + F.strings.fill(W.part, { n: page.part, m: page.parts });
+    var s = page.screen;
+    var e = page.error;
+    var item = e || s;
+    if (e) ctx.sheet.classList.add("bad");
 
-    place(ctx, text("div", "label", label), { x: 56, y: 44, w: 681, h: 16 });
-    place(ctx, fit(accented("h2", "story-title", story.title), F.strings.fill(W.fitTitle, { t: story.title }), story.line), { x: 56, y: 60, w: 681, h: 48 });
-    if (story.summary) place(ctx, fit(text("p", "summary", q(ctx, story.summary)), F.strings.fill(W.fitSummary, { t: story.title }), story.summaryLine), { x: 56, y: 110, w: 681, h: 40 });
+    var top = el("div", "top");
+    top.appendChild(text("span", "label left", p.name + " · " + W.appFlow));
+    top.appendChild(text("span", "label", F.strings.fill(W.storyLabel, { n: page.storyIndex + 1, t: story.title })));
+    place(ctx, top, ctx.plan.top);
 
-    var svg = document.createElementNS(SVG, "svg");
-    svg.setAttribute("class", "links");
-    svg.setAttribute("width", ctx.plan.page.width);
-    svg.setAttribute("height", ctx.plan.page.height);
-    svg.innerHTML = '<defs>' +
-      '<marker id="a-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" class="head-blue"/></marker>' +
-      '<marker id="a-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" class="head-red"/></marker>' +
-      '</defs>';
-    ctx.sheet.appendChild(svg);
+    // The left column: the number, the name, what the user sees and does, and where it goes.
+    var col = el("div", "col");
+    var num = text("p", "num", e ? "!" : String(s.number));
+    num.appendChild(text("small", "", e ? F.strings.fill(W.after, { n: s.number }) : "/" + page.count));
+    col.appendChild(num);
+    if (e) col.appendChild(text("p", "warn", W.ifWrong));
+    col.appendChild(text("h2", "", q(ctx, item.name)));
+    var caption = F.model.splitCaption(item.caption, p.language);
+    if (caption.sees) block(col, W.sees, q(ctx, caption.sees), "");
+    if (caption.does) block(col, W.does, q(ctx, caption.does), "does");
+    var note = noteFor(ctx, story, s, e);
+    if (note) col.appendChild(text("p", "v note " + note.kind, note.text));
+    if (!e && page.index === 0 && story.summary) block(col, W.theStory, q(ctx, story.summary), "summary");
+    var where = { n: s.number, t: story.title, e: e ? e.name : "" };
+    place(ctx, fit(col, F.strings.fill(e ? W.fitError : W.fitCol, where), item.line), page.col);
 
-    var continues = nextPage && nextPage.type === "story" && nextPage.storyIndex === page.storyIndex;
-    var rows = page.rows;
-    rows.forEach(function (row, r) {
-      row.links.forEach(function (link) { line(ctx, svg, link); });
-      row.cells.forEach(function (cell, c) {
-        var isLastOnPage = r === rows.length - 1 && c === row.cells.length - 1;
-        drawCell(ctx, story, cell, row, c, isLastOnPage && continues);
-      });
-    });
+    device(ctx, p.kind, item, page.hero, "hero", { marks: true, error: !!e });
+
+    if (page.strip) strip(ctx, page);
+    else carousel(ctx, page);
+    if (page.mini) device(ctx, "phone", { sketch: s.sketch, shot: s.phoneShot }, page.mini, "mini");
+
+    footer(ctx, page.number);
   }
 
-  function drawCell(ctx, story, cell, row, col, continuesNextPage) {
+  function block(col, label, value, cls) {
+    col.appendChild(text("p", "k" + (cls === "summary" ? " gap" : ""), label));
+    col.appendChild(text("p", "v " + cls, value));
+  }
+
+  // Where this screen leads when no arrow of the strip can show it.
+  function noteFor(ctx, story, s, e) {
     var W = ctx.W;
-    var p = ctx.board.project;
-    var s = cell.screen;
-    var where = { n: s.number, t: story.title };
+    function named(template, n) { return F.strings.fill(template, { n: n, t: q(ctx, story.screens[n - 1].name) }); }
+    if (e) return e.to === "end" ? { kind: "end", text: W.endsHere } : { kind: "jump", text: named(W.backTo, e.to) };
+    if (s.to === "end" || (s.to === null && s.number === story.screens.length)) return { kind: "end", text: W.storyEnds };
+    if (s.to === null || s.to === s.number + 1) return null;
+    return { kind: "jump", text: named(W.goesTo, s.to) };
+  }
 
-    place(ctx, frame(ctx, p.kind, s.sketch, { number: s.number, shot: s.shot }), cell.frame);
-    if (cell.mini) place(ctx, frame(ctx, "phone mini", s.sketch, { shot: s.phoneShot }), cell.mini);
-
-    var cap = el("div", "cap");
-    cap.appendChild(text("div", "name", q(ctx, s.name)));
-    cap.appendChild(text("p", "text", q(ctx, s.caption)));
-    var note = noteFor(W, story, s, row, col, continuesNextPage);
-    if (note) cap.appendChild(text("div", "note " + note.kind, note.text));
-    place(ctx, fit(cap, F.strings.fill(W.fitCaption, where), s.line), cell.caption);
-
-    cell.errors.forEach(function (e) {
-      place(ctx, frame(ctx, p.kind, "error", { error: true, shot: e.error.shot, small: true }), e.frame);
-      var box = el("div", "etext");
-      box.appendChild(text("div", "name", q(ctx, e.error.name)));
-      box.appendChild(text("p", "text", q(ctx, e.error.caption)));
-      box.appendChild(text("div", "note " + (e.error.to === "end" ? "end" : "jump"),
-        e.error.to === "end" ? W.endsHere : F.strings.fill(W.backTo, { n: e.error.to })));
-      place(ctx, fit(box, F.strings.fill(W.fitError, { n: where.n, t: where.t, e: e.error.name }), e.error.line), e.text);
+  // Wide screens: the story's screens as a small strip under the big one, the current one lit.
+  function strip(ctx, page) {
+    page.strip.forEach(function (t) {
+      device(ctx, ctx.board.project.kind, t.screen, t.box, "thumb" + (t.on ? " on" : ""), { fill: true });
+      place(ctx, text("p", "tn" + (t.on ? " on" : ""), t.screen.number + " · " + q(ctx, t.screen.name)), t.label);
+      if (t.arrow) place(ctx, el("i", "arr sm"), t.arrow);
     });
   }
 
-  function noteFor(W, story, s, row, col, continuesNextPage) {
-    if (s.to === "end") return { kind: "end", text: W.endsHere };
-    if (s.to === null && s.number === story.screens.length) return { kind: "end", text: W.end };
-    if (F.layout.goesToNext(s, story)) {
-      if (continuesNextPage) return { kind: "jump", text: W.continues };
-      return null; // an arrow shows it
+  // A phone: the screen before and the screen after, dimmed beside the big one; dots for the whole story.
+  function carousel(ctx, page) {
+    var hero = page.hero;
+    var e = page.error;
+    var midY = hero.y + hero.h / 2 - 9;
+    function name(box, value, on) {
+      place(ctx, text("p", "tn c" + (on ? " on" : ""), value), { x: box.x, y: page.names.y, w: box.w, h: page.names.h });
     }
-    return { kind: "jump", text: F.strings.fill(W.goesTo, { n: s.to }) };
+    ["prev", "next"].forEach(function (key) {
+      var side = page.sides[key];
+      if (!side) return;
+      device(ctx, "phone", side.screen, side.box, "side");
+      name(side.box, side.screen.number + " · " + q(ctx, side.screen.name), false);
+      var x = key === "prev" ? hero.x - L.SIDE.gap / 2 - 9 : hero.x + hero.w + L.SIDE.gap / 2 - 9;
+      place(ctx, el("i", "arr"), { x: x, y: midY, w: 18, h: 18 });
+    });
+    name(hero, e ? q(ctx, e.name) : page.screen.number + " · " + q(ctx, page.screen.name), true);
+
+    var dots = el("div", "dots");
+    for (var i = 0; i < page.count; i++) dots.appendChild(el("i", i === page.index ? "on" : ""));
+    place(ctx, dots, page.dots);
+
+    if (page.back && typeof e.to === "number") {
+      var back = text("p", "back", "↩ " + ctx.W.backToShort + " ");
+      back.appendChild(text("b", "", e.to + " · " + q(ctx, page.story.screens[e.to - 1].name)));
+      place(ctx, back, page.back);
+    }
   }
 
-  function footer(ctx, n, isLast) {
+  function footer(ctx, n) {
     var p = ctx.board.project;
     var W = ctx.W;
-    var status = p.status === "approved" ? W.approved : W.draft;
-    var f = el("div", "footer");
-    f.appendChild(text("span", "left", p.name + " · " + W.appFlow + " · v" + p.version + " · " + status));
-    f.appendChild(text("span", "right", F.strings.fill(W.pageOf, { n: n, m: ctx.total })));
-    place(ctx, f, { x: 56, y: 1070, w: 681, h: 22 });
-    if (isLast) place(ctx, text("div", "credit", W.madeWith), { x: 56, y: 1096, w: 681, h: 14 });
+    var f = el("div", "foot");
+    f.appendChild(dotted("span", "", [p.name, W.appFlow, "v" + p.version, p.status === "approved" ? W.approved : W.draft]));
+    if (n === ctx.total) f.appendChild(text("span", "credit", W.madeWith));
+    f.appendChild(text("span", "", F.strings.fill(W.pageOf, { n: n, m: ctx.total })));
+    place(ctx, f, ctx.plan.foot);
   }
 
-  // ---------- frames and sketches ----------
+  // ---------- device frames, pictures, sketches, markers ----------
 
-  function frame(ctx, kind, sketch, o) {
-    var f = el("div", "frame " + kind + (o.error ? " err" : "") + (o.small ? " small" : ""));
-    var screen = el("div", "screen");
-    screen.appendChild(drawSketch(sketch));
-    f.appendChild(screen);
-    if (o.shot) addShot(ctx, f, screen, o.shot);
-    if (o.number) f.appendChild(text("div", "num", String(o.number)));
+  /* One device frame in its room. item is a screen or an "if it goes wrong" line ({ sketch, shot, tap, look }).
+     o.fill: take the whole room and crop the picture to it (the strip); o.marks: draw the tap and look points. */
+  function device(ctx, kind, item, room, cls, o) {
+    o = o || {};
+    var f = el("div", "dev " + kind + " " + cls);
+    var bar = L.SHAPE[kind].bar && !o.fill ? f.appendChild(el("div", "bar")) : null;
+    var screen = f.appendChild(el("div", "screen"));
+    screen.appendChild(drawSketch(o.error || item.sketch === undefined ? "error" : item.sketch));
+    var entry = { el: f, bar: bar, screen: screen, kind: kind, room: room, fill: !!o.fill, img: null, marks: null, rtl: ctx.rtl };
+    if (item.shot) addShot(ctx, entry, item.shot);
+    if (o.marks && entry.img) {
+      entry.marks = f.appendChild(el("div", "marks"));
+      ["tap", "look"].forEach(function (key) { if (item[key]) entry.marks.appendChild(marker(ctx, key, item[key])); });
+    }
+    frames.push(entry);
+    size(entry);
+    ctx.sheet.appendChild(f);
     return f;
   }
 
-  function addShot(ctx, frameEl, screen, src) {
-    function missing() { frameEl.appendChild(text("div", "missing", ctx.W.shotMissing)); }
+  function addShot(ctx, entry, src) {
+    function missing() {
+      entry.img = null;
+      if (entry.marks) entry.marks.remove();
+      if (!entry.fill) entry.el.appendChild(text("div", "missing", ctx.W.shotMissing));
+    }
     // Each folder and file name goes to the browser as a name, never as part of a web address ("&", "+" and "'"
     // stay letters of the name). model.js already refuses anything but a plain path below the page; the check
     // after it keeps the browser to that folder too.
     var url = src.split("/").map(encodeURIComponent).join("/");
     var folder = new URL(".", document.baseURI).href;
     if (new URL(url, document.baseURI).href.indexOf(folder) !== 0) return missing();
+    var crop = ctx.board.project.crop;
+    var kept = 1 - crop.top - crop.bottom;
     var img = new Image();
     img.className = "shot";
     img.alt = "";
+    // The cut-off top and bottom hang outside the screen, which hides them.
+    img.style.top = (-crop.top / kept * 100) + "%";
+    img.style.height = (100 / kept) + "%";
     img.addEventListener("error", function () {
       img.remove();
+      entry.el.classList.remove("has-shot");
       missing();
     });
     img.src = url;
-    screen.appendChild(img);
-    frameEl.classList.add("has-shot");
+    entry.img = img;
+    entry.kept = kept;
+    entry.screen.appendChild(img);
+    entry.el.classList.add("has-shot");
   }
 
-  // Each sketch is a few grey blocks and one blue button, drawn by frameflow.css.
+  /* Gives a frame its place: the whole room (the strip), or the largest frame of the picture's own shape that
+     fits the room. Called when drawn, and again once the pictures have loaded and their shapes are known. */
+  function size(entry) {
+    var shape = L.SHAPE[entry.kind];
+    var img = entry.img;
+    var aspect = img && img.naturalWidth ? img.naturalWidth / (img.naturalHeight * entry.kept) : shape.aspect;
+    var r = entry.fill ? { x: entry.room.x, y: entry.room.y, w: entry.room.w, h: entry.room.h, bar: 0 }
+      : L.fitFrame(entry.room, aspect, shape.bar);
+    var s = entry.el.style;
+    s.left = (entry.rtl ? L.mirrorX(r.x, r.w) : r.x) + "px";
+    s.top = r.y + "px";
+    s.width = r.w + "px";
+    s.height = r.h + "px";
+    s.setProperty("--w", r.w + "px");
+    if (entry.bar) entry.bar.style.height = r.bar + "px";
+    entry.screen.style.top = r.bar + "px";
+    if (entry.marks) entry.marks.style.top = r.bar + "px";
+  }
+
+  // A tap point (solid) or a "look here" point (dashed ring) on the picture, with its short label.
+  function marker(ctx, key, mark) {
+    var crop = ctx.board.project.crop;
+    var y = Math.max(0, Math.min(1, (mark.y - crop.top) / (1 - crop.top - crop.bottom)));
+    var side = L.markSide(mark.x, y);
+    var ring = el("i", "ring" + (key === "look" ? " see" : ""));
+    ring.style.left = (mark.x * 100) + "%";
+    ring.style.top = (y * 100) + "%";
+    if (mark.label) ring.appendChild(text("span", "tag " + side.v + " " + side.h, q(ctx, mark.label)));
+    return ring;
+  }
+
+  // Each sketch is a few grey blocks and one button in the app's colour, drawn by frameflow.css.
   var SKETCH = {
     form: ["field", "field", "button"],
     list: ["row", "row", "row", "row"],
@@ -275,18 +306,6 @@
     return wrap;
   }
 
-  // ---------- lines ----------
-
-  function line(ctx, svg, link) {
-    var pts = link.points.map(function (pt) { return [ctx.rtl ? ctx.plan.page.width - pt[0] : pt[0], pt[1]]; });
-    var path = document.createElementNS(SVG, "path");
-    path.setAttribute("d", "M" + pts.map(function (pt) { return pt[0] + "," + pt[1]; }).join(" L"));
-    path.setAttribute("class", "link " + link.type);
-    if (link.type === "next" || link.type === "turn") path.setAttribute("marker-end", "url(#a-blue)");
-    if (link.type === "error") path.setAttribute("marker-end", "url(#a-red)");
-    svg.appendChild(path);
-  }
-
   // ---------- finishing: fonts, pictures, the fit check ----------
 
   function finish() {
@@ -298,7 +317,8 @@
       });
     });
     Promise.all([fonts].concat(pictures)).then(function () {
-      var problems = settleCover();
+      frames.forEach(size);
+      var problems = [];
       Array.prototype.forEach.call(document.querySelectorAll("[data-fit]"), function (node) {
         if (node.scrollHeight > node.clientHeight + 1 || node.scrollWidth > node.clientWidth + 1) {
           problems.push({ line: Number(node.getAttribute("data-fit-line")) || 0, text: node.getAttribute("data-fit") });
@@ -345,13 +365,16 @@
     return n;
   }
 
-  // The last word drawn in blue, like workflow-project's titles.
-  function accented(tag, cls, value) {
+  // Short pieces in a row with a dot between them. Each piece keeps its own reading direction, so "v1" and a
+  // date stay in place inside an Arabic line.
+  function dotted(tag, cls, pieces) {
     var n = el(tag, cls);
-    var words = value.trim().split(/\s+/);
-    var last = words.pop();
-    if (words.length) n.appendChild(document.createTextNode(words.join(" ") + " "));
-    n.appendChild(text("span", "accent", last));
+    var row = el("span");
+    pieces.filter(Boolean).forEach(function (piece, i) {
+      if (i) row.appendChild(document.createTextNode(" · "));
+      row.appendChild(text("bdi", "", piece));
+    });
+    n.appendChild(row);
     return n;
   }
 
@@ -362,8 +385,7 @@
   }
 
   function place(ctx, node, r) {
-    var x = ctx.rtl ? ctx.plan.page.width - r.x - r.w : r.x;
-    node.style.left = x + "px";
+    node.style.left = (ctx.rtl ? L.mirrorX(r.x, r.w) : r.x) + "px";
     node.style.top = r.y + "px";
     node.style.width = r.w + "px";
     node.style.height = r.h + "px";

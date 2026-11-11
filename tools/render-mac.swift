@@ -15,8 +15,8 @@ final class Renderer: NSObject, WKNavigationDelegate {
     init(page: URL, out: URL) {
         self.page = page
         self.out = out
-        web = WKWebView(frame: NSRect(x: 0, y: 0, width: 900, height: 1200))
-        window = NSWindow(contentRect: NSRect(x: -4000, y: 0, width: 900, height: 1200),
+        web = WKWebView(frame: NSRect(x: 0, y: 0, width: 1200, height: 900))
+        window = NSWindow(contentRect: NSRect(x: -4000, y: 0, width: 1200, height: 900),
                           styleMask: [.borderless], backing: .buffered, defer: false)
         super.init()
         window.contentView = web
@@ -52,7 +52,7 @@ final class Renderer: NSObject, WKNavigationDelegate {
             guard let text = value as? String, let data = text.data(using: .utf8),
                   let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let h = obj["h"] as? Double, let pages = obj["pages"] as? [[Double]] else { return self.fail("could not measure the pages") }
-            let size = NSSize(width: 900, height: h)
+            let size = NSSize(width: 1200, height: h)
             self.window.setContentSize(size)
             self.web.setFrameSize(size)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { self.snap(pages, 0) }
@@ -77,6 +77,7 @@ final class Renderer: NSObject, WKNavigationDelegate {
     func pdf(_ count: Int) {
         let info = NSPrintInfo()
         info.paperSize = NSSize(width: 595.28, height: 841.89)
+        info.orientation = .landscape
         info.topMargin = 0; info.bottomMargin = 0; info.leftMargin = 0; info.rightMargin = 0
         info.horizontalPagination = .fit
         info.verticalPagination = .automatic

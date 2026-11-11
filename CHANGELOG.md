@@ -3,6 +3,52 @@
 All notable changes to this project. The version is `VERSION` in
 `skills/frameflow/assets/template/frameflow/model.js`.
 
+## [0.3.0] - 2026-11-11
+
+A new look, after the owner ran 0.2.0 on a real tablet app and found the screens a third of the page and
+unreadable, no tap point, half the page empty and a bare cover. He picked the "Cinema" look from three and
+set the rule that a storyboard follows its app (ADR 0003).
+
+### Changed
+
+- **One screen a page, shown big.** The page is A4 lying on its side. Beside the screen: its number, its
+  name, and what the user **Sees** and **Does**. Under a tablet, desktop or website screen: the story's
+  other screens as a small strip, the current one lit. A phone shows the screen before and the screen after
+  beside the big one. The old look (rows of small frames, arrows, "part 2" pages) is removed.
+- **"If it goes wrong" gets its own page**, in red, right after its screen, with the way back.
+- **The cover shows the app**: its first screen, tilted, beside the name and the stories.
+- **The frame takes the picture's own shape**, so a tablet held sideways or upright both show whole.
+- Captions may be longer: 160 characters (a `!` caption: 140). The `[sketch]` is optional.
+- The printed PDF is A4 landscape; the Print settings in `pdf.md` say so.
+
+### Added
+
+- **The app's own colours**: `- stage:` (its background) and `- accent:` (its main button colour). The
+  other page colours are worked out from the two (`theme.js`); an accent that cannot be seen on its stage is
+  refused. Without them, frameflow's own light grey and blue.
+- **`tap:`** marks where the user taps on a screen's picture (`tap: 92%, 56% Taps Checkout`), and **`look:`**
+  where to look. Both need the screen's `shot:`.
+- **`- crop:`** cuts the device's own status or navigation bar off every picture.
+- **Sees / Does**: a caption that starts with "Sees" is split at its first sentence. Older captions print
+  whole under "Does".
+- The skill replaces the template files of a storyboard made with an older frameflow, and keeps its text copy.
+
+### Fixed
+
+- Safari's print engine added a blank sheet after every page at 793 px tall; the page is 792.
+- In an Arabic footer or cover line, "v1" and the date keep their place.
+
+### Tests
+
+- 58 tests (was 67): the layout tests were rewritten for the new pages (one page per screen in order, no
+  overlap, nothing off the page, the strip always shows the current screen, the frame keeps the picture's
+  shape), and the reader gained tests for `tap:`, `look:`, the colours, `crop` and Sees / Does.
+
+### Not done
+
+- No second-AI review of this version yet. Not tried on Windows, in Firefox or in Safari's own Print dialog.
+- The README's picture still shows the old look.
+
 ## [0.2.0] - 2026-10-15
 
 Three fixes the owner asked for after the Planvy app flow, where the design was approved but the storyboard

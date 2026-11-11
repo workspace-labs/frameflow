@@ -1,157 +1,132 @@
-/* frameflow: turns a read storyboard into pages, rows and boxes, in CSS pixels on an A4 page.
+/* frameflow: turns a read storyboard into pages and boxes, in CSS pixels on an A4 page lying on its side.
+   One screen a page, shown big; beside it the number and what the user sees and does; under it the story's
+   other screens as a small strip (a phone shows the screen before and the screen after instead).
    Pure numbers: no page access, so Node's tests can check every position.
-   Sizes here are part of the approved look; change them only with the owner's yes. */
+   Sizes here are part of the approved look (Cinema, 2026-11-11); change them only with the owner's yes. */
 (function (root) {
   "use strict";
 
-  // A4 at 96 CSS pixels per inch, one pixel short each way so a page never spills onto a second sheet.
-  var PAGE = { width: 793, height: 1122 };
-  var CONTENT = { left: 56, right: 737, top: 156, bottom: 1056 };
+  // A4 on its side at 96 CSS pixels per inch, a pixel or two short each way so a page never spills onto a second
+  // sheet (Safari's print rounds the sheet down to just under 793).
+  var PAGE = { width: 1122, height: 792 };
+  var TOP = { x: 56, y: 38, w: 1010, h: 16 };     // the two small labels: the project, and the story
+  var FOOT = { x: 56, y: 748, w: 1010, h: 24 };
+  var COL = { x: 56, y: 84, w: 238, h: 650 };     // the number, the screen's name, Sees and Does
 
-  // Per kind: columns per row, the frame, and the small frame used for "if it goes wrong".
-  var KIND = {
-    phone:   { cols: 2, w: 230, h: 479, ew: 64,  eh: 134 },  // a modern phone's tall shape, big enough to read
-    tablet:  { cols: 3, w: 150, h: 200, ew: 66,  eh: 88 },
-    desktop: { cols: 2, w: 280, h: 184, ew: 124, eh: 81 },
-    website: { cols: 2, w: 280, h: 184, ew: 124, eh: 81 }
+  // Wide screens (tablet, desktop, website): the big screen's room, and the strip under it.
+  var HERO = { x: 322, y: 96, w: 744, h: 465 };
+  var STRIP = { y: 598, step: 156, w: 120, h: 75, max: 5, labelY: 680, labelH: 16, labelW: 146 };
+  // A website's phone version: a small phone over the big screen's lower corner.
+  var MINI = { x: 990, y: 367, w: 96, h: 208 };
+
+  // A phone: the big phone in the middle, the screen before and the screen after smaller beside it.
+  var PHONE = { x: 573, y: 84, w: 250, h: 542 };
+  var SIDE = { w: 180, h: 390, gap: 44 };
+  var NAMES = { y: 642, h: 16 };
+  var DOTS = { x: 330, y: 686, w: 736, h: 4 };
+  var BACK = { x: 867, y: 330, w: 199, h: 64 };   // "back to 4 · Pay", where the next phone would be
+
+  var COVER = {
+    text: { x: 56, y: 84, w: 400, h: 630 },
+    meta: { x: 56, y: 728, w: 1010, h: 38 },
+    wide: { x: 480, y: 150, w: 800, h: 500 },     // runs off the page's right edge on purpose
+    phone: { x: 690, y: 112, w: 262, h: 568 }
   };
 
-  var FRAME_INSET = 36;    // frame's left edge from its cell's left edge (room for the red line and the number)
-  var CAPTION_GAP = 10;    // frame bottom to caption
-  var CAPTION_H = 84;      // name + up to three lines + the "goes to" note
-  var ERROR_TOP_GAP = 12;  // caption bottom to the first "if it goes wrong" frame
-  var ERROR_GAP = 10;      // between two "if it goes wrong" frames
-  var ROW_GAP = 30;        // between rows: room for the arrow that turns to the next row
-  var CELL_RIGHT_PAD = 6;
-  var ERROR_TEXT_GAP = 8;
-  // A website's phone version: a small phone over the browser frame's lower right corner.
-  var MINI = { w: 52, h: 88, out: 8, down: 4 };
-  // The number badge on each frame's top left corner: 11px out from inside the frame's 2px border.
-  var BADGE = { out: 13, size: 24 };
+  // A frame's screen, width over height, when there is no picture to take the shape from; and how tall a
+  // desktop window's or a browser's top bar is, as a share of the frame's width.
+  var SHAPE = {
+    phone:   { aspect: 250 / 542, bar: 0 },
+    tablet:  { aspect: 1.6, bar: 0 },
+    desktop: { aspect: 744 / 439, bar: 26 / 744 },
+    website: { aspect: 744 / 439, bar: 26 / 744 }
+  };
 
-  function rowHeight(k, errors) {
-    var h = k.h + CAPTION_GAP + CAPTION_H + ROW_GAP;
-    if (errors > 0) h += ERROR_TOP_GAP + errors * k.eh + (errors - 1) * ERROR_GAP;
-    return h;
+  /* The largest frame of this shape that fits the room, centred in it.
+     aspect is the screen's width over its height; the bar (if any) sits above the screen. */
+  function fitFrame(room, aspect, bar) {
+    var w = Math.min(room.w, room.h / (1 / aspect + (bar || 0)));
+    var barH = w * (bar || 0);
+    var h = w / aspect + barH;
+    return { x: room.x + (room.w - w) / 2, y: room.y + (room.h - h) / 2, w: w, h: h, bar: barH };
   }
 
-  /* The whole document: a cover, then each story on its own page(s).
-     Returns { kind, pages: [ { type: "cover" } | { type: "story", story, storyIndex, part, parts, rows } ] }. */
+  // Which screens the strip shows: up to `max`, keeping the current one in view (as near the middle as it can be).
+  function windowOf(count, index, max) {
+    var size = Math.min(count, max);
+    var start = Math.max(0, Math.min(index - Math.floor(size / 2), count - size));
+    var out = [];
+    for (var i = 0; i < size; i++) out.push(start + i);
+    return out;
+  }
+
+  // Where a marker's label sits: under the point, or over it near the screen's bottom; running toward the middle.
+  function markSide(x, y) {
+    return { v: y > 0.75 ? "up" : "down", h: x > 0.5 ? "left" : "right" };
+  }
+
+  /* The whole document: a cover, then every screen on its own page, each "if it goes wrong" on the page after
+     its screen. Returns { kind, page, pages: [ cover | screen page ] }. */
   function plan(board) {
     var kind = board.project.kind;
-    var k = KIND[kind];
-    if (!k) throw new Error("layout: unknown kind " + kind);
-    var cellW = (CONTENT.right - CONTENT.left) / k.cols;
-    var pages = [{ type: "cover" }];
+    if (!SHAPE[kind]) throw new Error("layout: unknown kind " + kind);
+    var phone = kind === "phone";
+    var pages = [{ type: "cover", text: COVER.text, meta: COVER.meta, device: phone ? COVER.phone : COVER.wide }];
 
     board.stories.forEach(function (story, storyIndex) {
-      var rows = [];
-      for (var i = 0; i < story.screens.length; i += k.cols) {
-        var screens = story.screens.slice(i, i + k.cols);
-        var errors = Math.max.apply(null, screens.map(function (s) { return s.errors.length; }));
-        rows.push({ screens: screens, height: rowHeight(k, errors) });
-      }
-
-      var storyPages = [];
-      var current = null;
-      rows.forEach(function (row) {
-        if (!current || current.used + row.height - ROW_GAP > CONTENT.bottom - CONTENT.top) {
-          current = { rows: [], used: 0 };
-          storyPages.push(current);
-        }
-        row.top = CONTENT.top + current.used;
-        current.rows.push(row);
-        current.used += row.height;
-      });
-
-      storyPages.forEach(function (sp, part) {
-        var placed = sp.rows.map(function (row) { return placeRow(row, k, cellW, story, board.project.phoneVersion); });
-        placed.forEach(function (row, r) {
-          if (placed[r + 1] && goesToNext(row.cells[row.cells.length - 1].screen, story)) row.links.push(turn(row, placed[r + 1], CONTENT));
-        });
-        pages.push({
-          type: "story", story: story, storyIndex: storyIndex, part: part + 1, parts: storyPages.length, rows: placed
-        });
+      story.screens.forEach(function (screen, index) {
+        var base = { type: "screen", story: story, storyIndex: storyIndex, screen: screen, index: index, count: story.screens.length };
+        pages.push(place(base, null, phone, board.project.phoneVersion));
+        screen.errors.forEach(function (error) { pages.push(place(base, error, phone, board.project.phoneVersion)); });
       });
     });
 
     pages.forEach(function (p, i) { p.number = i + 1; });
-    return { kind: kind, page: PAGE, content: CONTENT, pages: pages };
+    return { kind: kind, page: PAGE, top: TOP, foot: FOOT, pages: pages };
   }
 
-  function placeRow(row, k, cellW, story, phoneVersion) {
-    var cells = row.screens.map(function (screen, col) {
-      var cellLeft = CONTENT.left + col * cellW;
-      var frame = { x: cellLeft + FRAME_INSET, y: row.top, w: k.w, h: k.h };
-      var caption = {
-        x: frame.x, y: frame.y + frame.h + CAPTION_GAP,
-        w: cellLeft + cellW - CELL_RIGHT_PAD - frame.x, h: CAPTION_H
+  function place(base, error, phone, phoneVersion) {
+    var screens = base.story.screens;
+    var p = { error: error, col: COL };
+    Object.keys(base).forEach(function (k) { p[k] = base[k]; });
+
+    if (phone) {
+      p.hero = PHONE;
+      var sideY = PHONE.y + (PHONE.h - SIDE.h) / 2;
+      // An "if it goes wrong" page shows its own screen dimmed before it, and the way back after it.
+      var before = error ? base.screen : screens[base.index - 1];
+      var after = error ? null : screens[base.index + 1];
+      p.sides = {
+        prev: before ? { screen: before, box: { x: PHONE.x - SIDE.gap - SIDE.w, y: sideY, w: SIDE.w, h: SIDE.h } } : null,
+        next: after ? { screen: after, box: { x: PHONE.x + PHONE.w + SIDE.gap, y: sideY, w: SIDE.w, h: SIDE.h } } : null
       };
-      var errors = screen.errors.map(function (error, e) {
-        var ey = caption.y + CAPTION_H + ERROR_TOP_GAP + e * (k.eh + ERROR_GAP);
-        var ef = { x: frame.x, y: ey, w: k.ew, h: k.eh };
-        var tx = ef.x + ef.w + ERROR_TEXT_GAP;
-        return { error: error, frame: ef, text: { x: tx, y: ey, w: caption.x + caption.w - tx, h: k.eh } };
-      });
-      var badge = { x: frame.x - BADGE.out, y: frame.y - BADGE.out, w: BADGE.size, h: BADGE.size };
-      var mini = phoneVersion ? {
-        x: frame.x + frame.w + MINI.out - MINI.w, y: frame.y + frame.h + MINI.down - MINI.h, w: MINI.w, h: MINI.h
-      } : null;
-      return { screen: screen, frame: frame, badge: badge, mini: mini, caption: caption, errors: errors };
+      p.names = { y: NAMES.y, h: NAMES.h };
+      p.dots = DOTS;
+      p.back = error ? BACK : null;
+      return p;
+    }
+
+    p.hero = HERO;
+    p.mini = phoneVersion && !error ? MINI : null;
+    p.strip = windowOf(base.count, base.index, STRIP.max).map(function (i, slot, all) {
+      var x = HERO.x + slot * STRIP.step;
+      return {
+        index: i, screen: screens[i], on: i === base.index,
+        box: { x: x, y: STRIP.y, w: STRIP.w, h: STRIP.h },
+        label: { x: x, y: STRIP.labelY, w: STRIP.labelW, h: STRIP.labelH },
+        arrow: slot < all.length - 1 ? { x: x + STRIP.w + 9, y: STRIP.y + STRIP.h / 2 - 9, w: 18, h: 18 } : null
+      };
     });
-    return { top: row.top, height: row.height, cells: cells, links: links(cells, k, story) };
-  }
-
-  /* The lines drawn on a row, as point lists:
-     - "next": a blue arrow between two frames side by side, when the tap goes to the next screen;
-     - "error": the red dashed line from a frame down to its "if it goes wrong" frames;
-     - "turn": added by plan(), from a row's last frame to the first frame of the row below. */
-  function links(cells, k, story) {
-    var out = [];
-    cells.forEach(function (cell, i) {
-      var s = cell.screen;
-      var next = cells[i + 1];
-      if (next && goesToNext(s, story)) {
-        var y = cell.frame.y + cell.frame.h / 2;
-        var gap = next.frame.x - (cell.frame.x + cell.frame.w);
-        var pad = Math.max(10, (gap - 56) / 2);
-        out.push({ type: "next", points: [[cell.frame.x + cell.frame.w + pad, y], [next.frame.x - pad, y]] });
-      }
-      if (cell.errors.length) {
-        var lx = cell.frame.x - 14;
-        var start = cell.frame.y + cell.frame.h * 0.75;
-        var last = cell.errors[cell.errors.length - 1];
-        out.push({ type: "error-trunk", points: [[cell.frame.x, start], [lx, start], [lx, last.frame.y + last.frame.h / 2]] });
-        cell.errors.forEach(function (e) {
-          var ey = e.frame.y + e.frame.h / 2;
-          out.push({ type: "error", points: [[lx, ey], [e.frame.x - 3, ey]] });
-        });
-      }
-    });
-    return out;
-  }
-
-  // The turning arrow from the last frame of a row to the first frame of the row below.
-  function turn(fromRow, toRow, content) {
-    var last = fromRow.cells[fromRow.cells.length - 1].frame;
-    var first = toRow.cells[0].frame;
-    var x = content.right + 14;
-    var y = toRow.top - ROW_GAP / 2;
-    var cx = first.x + first.w / 2;
-    return { type: "turn", points: [[last.x + last.w + 10, last.y + last.h / 2], [x, last.y + last.h / 2], [x, y], [cx, y], [cx, first.y - 6]] };
-  }
-
-  function goesToNext(screen, story) {
-    if (screen.to === null) return screen.number < story.screens.length;
-    return screen.to === screen.number + 1;
+    return p;
   }
 
   // Right to left: the same boxes, mirrored across the page.
   function mirrorX(x, w) { return PAGE.width - x - (w || 0); }
 
   var api = {
-    PAGE: PAGE, CONTENT: CONTENT, KIND: KIND, ROW_GAP: ROW_GAP, MINI: MINI, BADGE: BADGE,
-    plan: plan, turn: turn, goesToNext: goesToNext, mirrorX: mirrorX, rowHeight: rowHeight
+    PAGE: PAGE, TOP: TOP, FOOT: FOOT, COL: COL, HERO: HERO, STRIP: STRIP, MINI: MINI, PHONE: PHONE, SIDE: SIDE,
+    DOTS: DOTS, BACK: BACK, COVER: COVER, SHAPE: SHAPE,
+    plan: plan, fitFrame: fitFrame, windowOf: windowOf, markSide: markSide, mirrorX: mirrorX
   };
   root.Frameflow = root.Frameflow || {};
   root.Frameflow.layout = api;

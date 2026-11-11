@@ -4,6 +4,21 @@ frameflow was not just written. It was tested, then a second AI tried to break i
 was fixed before release. This page lists what was run and what was found, and is honest about what has not
 been tried yet.
 
+## Since then: version 0.3.0 (2026-11-11)
+
+Version 0.3.0 replaced the drawing (one screen a page, the app's own colours, tap markers). The reader kept
+its shape and its tests; the layout tests were rewritten for the new pages. What is true of 0.3.0:
+
+| What | Result |
+|---|---|
+| Automated tests | **58**, all passing on Node.js 18, 20 and 22 (43 for the reader and the colour rules, 15 for the page layout) |
+| Planted bugs | **8** deliberate breaks (3 in the reader, 1 in the colour rules, 4 in the layout). The tests caught **all 8** |
+| Pages looked at | Every example, a real tablet app's 16-page flow and a worst-case long storyboard, drawn and looked at, then printed to A4 landscape PDF in two browser engines (WebKit and Chromium): one sheet per page in both |
+| Independent review | **Not yet.** The second AI reviewed 0.1.0 only; 0.3.0's new drawing has not been reviewed |
+| Not tried | Windows, Firefox, Safari's own Print dialog, a native Arabic read |
+
+Everything below is the record of version 0.1.0, kept as it was written.
+
 ## At a glance
 
 | What | Result |

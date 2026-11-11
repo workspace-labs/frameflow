@@ -2,17 +2,18 @@
 
 ## What it does
 
-- Draws an app's **screens as a numbered storyboard**: frames left to right like a comic strip, a short
-  caption under each ("Types email and password, taps Sign in"), blue arrows for the normal path, and
-  red dashed frames for what happens when something goes wrong.
+- Draws an app's **screens as a numbered storyboard**: one screen a page, shown big, with a marker where
+  the user taps; beside it the number and what the user sees and does; under it the story's other screens,
+  small; and a red page for what happens when something goes wrong.
 - For a **phone app, tablet app, desktop app or website**: the frame follows the kind (phone, tablet,
   app window, browser). A website can also show its phone version.
 - **Before building**: simple sketches, so the client agrees on the screens before any code exists.
   **After building**: real screenshots, for the handover.
 - **The client decides**: every storyboard has a version (v1, v2…) and is either a draft or
   "Approved" with the date.
-- One page per user story (a default the person can change). A story too long for a page continues on a
-  "part 2" page.
+- One page per screen, on A4 lying on its side, grouped by user story.
+- **Follows the app**: the pages take the app's own background and main button colour, and the frame its
+  platform. The type, the page structure and the captions stay frameflow's; no brand logo on the pages.
 - Saves a **text copy** (`app-flow.md`) next to the page every time. It is the master copy that any agent
   can read, and updates start from it.
 - English by default; **Arabic** (right to left) when asked.
@@ -35,8 +36,8 @@
   "back to" on an error frame: the page shows a numbered list of plain-language problems instead of a
   messy drawing.
 - **Nothing to install.** A browser is the only need. The fonts travel inside the template.
-- **Same look everywhere.** White page, thin blue top line, Plus Jakarta Sans, one blue accent word; the
-  approved B2 storyboard. A stranger's storyboard carries their own name (or none) and one small line:
+- **Same structure everywhere.** The approved Cinema look (2026-11-11): the big number, Sees and Does, the
+  big screen, the strip, Plus Jakarta Sans; only the two colours change with the app. A stranger's storyboard carries their own name (or none) and one small line:
   "Made with frameflow · by WorkSpace Labs".
 - **Private by default.** Before real screenshots, the agent warns: use demo data, never real names,
   phone numbers or passwords.

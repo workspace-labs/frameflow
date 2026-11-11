@@ -49,14 +49,15 @@ Windows PowerShell:
 - The page address must be a full `file:///` path; on Windows use forward slashes after `file:///C:/`.
 - `--virtual-time-budget` gives the fonts and screenshots time to load before printing.
 - An older browser that does not know `--no-pdf-header-footer` uses `--print-to-pdf-no-header` instead.
-- Check the PDF exists and is not empty. Its page count is the cover plus every story page.
+- Check the PDF exists and is not empty. Its page count is the cover, plus one page for every screen and one
+  for every "if it goes wrong" line. The page sets A4 on its side by itself.
 
 ## 3. Otherwise, the person prints it
 
 When you cannot run a browser (no command line, no Chrome or Edge, or Claude in the browser), hand over the
 `docs/app-flow/` folder and tell the person, in these words or close to them:
 
-> Open `storyboard.html` in Chrome, Edge or Safari. Press Print, choose **Save as PDF**, then set **Paper A4**,
+> Open `storyboard.html` in Chrome, Edge or Safari. Press Print, choose **Save as PDF**, then set **Paper A4**, **Landscape** (the page lies on its side),
 > **Margins None**, turn **Background graphics** on (in Safari: **Print backgrounds**) and **Headers and
 > footers** off. Save it as "<Project> - App flow v<N>.pdf".
 
@@ -67,6 +68,6 @@ person to paste the list into the chat, then fix those lines.
 
 | The page shows | Meaning | What you do |
 |---|---|---|
-| The cover and the story pages | Every line was read and every word fits | Print |
+| The cover and the screens' pages | Every line was read and every word fits | Print |
 | A red box with numbered problems | A line is wrong, or a word does not fit its place | Fix `app-flow.md` by the line numbers, copy it in again, check again |
 | A grey box "Turn on JavaScript…" | The browser blocks scripts for files | Try another browser |

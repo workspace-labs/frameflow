@@ -4,7 +4,8 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { parse, VERSION } = require("../skills/frameflow/assets/template/frameflow/model.js");
+const { parse, splitCaption, VERSION } = require("../skills/frameflow/assets/template/frameflow/model.js");
+const theme = require("../skills/frameflow/assets/template/frameflow/theme.js");
 
 const EXAMPLES = path.join(__dirname, "../skills/frameflow/examples");
 
@@ -46,7 +47,7 @@ test("the food delivery example is read into the right shape", () => {
   assert.equal(order.screens.length, 6);
   const pay = order.screens[3];
   assert.deepEqual([pay.number, pay.name, pay.sketch, pay.to], [4, "Pay", "form", 5]);
-  assert.equal(pay.caption, 'Enters the card, taps "Pay now".');
+  assert.equal(pay.caption, 'Sees the card form. Enters the card, taps "Pay now".');
   assert.equal(pay.errors.length, 2);
   assert.deepEqual([pay.errors[0].name, pay.errors[0].to], ["Card refused", 4]);
   assert.equal(order.screens[5].to, null, "the last screen with no arrow is the end");
@@ -144,9 +145,17 @@ test("a target must exist and must not be the screen itself", () => {
   refusedWith(board(["## Buy", "1. Home [grid]: Sees. → 1"]), 6, "goes to itself");
 });
 
-test("a screen needs its sketch, a known sketch, and a caption", () => {
-  refusedWith(board(["## Buy", "1. Home: Sees products."]), 6, "missing its sketch");
+test("a screen needs a caption, and a sketch it names must be a known one", () => {
+  refusedWith(board(["## Buy", "1. Home [grid]"]), 6, "missing its caption");
   refusedWith(board(["## Buy", "1. Home [carousel]: Sees products."]), 6, '"carousel" is not a sketch');
+  refusedWith(board(["## Buy", "1. Home [big grid]: Sees products."]), 6, "must be one word");
+});
+
+test("the sketch may be left out: the screen is then blank until it has a picture", () => {
+  const r = board(["## Buy", "1. Home: Sees products.", "   shot: screenshots/1-1.png"]);
+  assert.deepEqual(r.problems, []);
+  assert.equal(r.storyboard.stories[0].screens[0].sketch, "blank");
+  assert.equal(r.storyboard.stories[0].screens[0].name, "Home");
 });
 
 test("a ! line needs a way out and at most two per screen", () => {
@@ -249,7 +258,7 @@ test("problems name the line they are on, even after blank lines", () => {
 });
 
 test("long words are refused with the limit named", () => {
-  refusedWith(board(["## Buy", "1. Home [grid]: " + "Sees a very long caption ".repeat(5)]), 6, "Keep it to 90");
+  refusedWith(board(["## Buy", "1. Home [grid]: " + "Sees a very long caption ".repeat(8)]), 6, "Keep it to 160");
   refusedWith(board(["## Buy", "1. A screen name that is far too long [grid]: Sees."]), 6, "Keep it to 24");
 });
 
@@ -274,4 +283,95 @@ test("straight quotes print as curly ones in English, never in Arabic", () => {
   assert.equal(strings.quotes("What didn't happen", "en"), "What didn’t happen");
   assert.equal(strings.quotes('يضغط "ادفع"', "ar"), 'يضغط "ادفع"');
   assert.equal(strings.quotes("", "en"), "");
+});
+
+// ---------- 0.3.0: tap and look points, the app's colours, crop, Sees / Does ----------
+
+const SHOT = ["## Buy", "1. Home: Sees products. Taps one.", "   shot: screenshots/1-1.png"];
+
+test("tap: and look: are read as a point on the picture, with an optional label", () => {
+  const r = board([...SHOT, "   tap: 86%, 91.5% Taps Checkout", "   look: 10, 20"]);
+  assert.deepEqual(r.problems, []);
+  const s = r.storyboard.stories[0].screens[0];
+  assert.deepEqual([s.tap.x, s.tap.y, s.tap.label], [0.86, 0.915, "Taps Checkout"]);
+  assert.deepEqual([s.look.x, s.look.y, s.look.label], [0.1, 0.2, ""]);
+});
+
+test("tap: under a ! line belongs to that line, and Arabic digits read as numbers", () => {
+  const r = board([...SHOT, "   ! No stock: Sees a note. → 1", "   shot: screenshots/1-1-e.png", "   tap: ٥٠%, ٢٥%"]);
+  assert.deepEqual(r.problems, []);
+  const s = r.storyboard.stories[0].screens[0];
+  assert.equal(s.tap, undefined);
+  assert.deepEqual([s.errors[0].tap.x, s.errors[0].tap.y], [0.5, 0.25]);
+});
+
+test("a tap: line that is not two numbers from 0 to 100 is refused", () => {
+  for (const bad of ["tap: left, top", "tap: 50%", "tap: 120%, 10%", "tap: 10% 20%", "tap: -5%, 10%", "tap:"]) {
+    refusedWith(board([...SHOT, "   " + bad]), 8, "two numbers from 0 to 100");
+  }
+});
+
+test("a tap: needs its picture, sits under a screen, comes once, and its label is short", () => {
+  refusedWith(board(["## Buy", "1. Home [grid]: Sees products.", "   tap: 50%, 50%"]), 7, "Add its shot: line first");
+  refusedWith(board(["## Buy", "   tap: 50%, 50%", "1. Home [grid]: Sees products."]), 6, "must sit right under the screen");
+  refusedWith(board([...SHOT, "   tap: 50%, 50%", "   tap: 60%, 60%"]), 9, "already has a tap: line");
+  refusedWith(board([...SHOT, "   look: 50%, 50% " + "a very long label ".repeat(3)]), 8, "Keep it to 28");
+});
+
+test("stage and accent are the app's two colours, written as hex", () => {
+  const r = parse("# A\n- kind: phone\n- stage: #0A0E0D\n- accent: #6d9\n## S\n1. H: Sees it.");
+  assert.deepEqual(r.problems, []);
+  assert.deepEqual([r.storyboard.project.stage, r.storyboard.project.accent], ["#0a0e0d", "#66dd99"]);
+  refusedWith(parse("# A\n- kind: phone\n- stage: dark green\n## S\n1. H: Sees it."), 3, "stage must be a colour");
+  refusedWith(parse("# A\n- kind: phone\n- accent: #12345\n## S\n1. H: Sees it."), 3, "accent must be a colour");
+});
+
+test("an accent that cannot be seen on the stage is refused, also against frameflow's own colours", () => {
+  refusedWith(parse("# A\n- kind: phone\n- stage: #101010\n- accent: #181818\n## S\n1. H: Sees it."), 4, "cannot be seen");
+  refusedWith(parse("# A\n- kind: phone\n- accent: #f0f1f3\n## S\n1. H: Sees it."), 3, "cannot be seen");
+  refusedWith(parse("# A\n- kind: phone\n- stage: #3d5afe\n## S\n1. H: Sees it."), 3, "cannot be seen");
+});
+
+test("crop cuts a share of every picture's top and bottom, up to 25% each", () => {
+  const crop = (v) => parse("# A\n- kind: phone\n- crop: " + v + "\n## S\n1. H: Sees it.");
+  assert.deepEqual(crop("top 4%, bottom 6%").storyboard.project.crop, { top: 0.04, bottom: 0.06 });
+  assert.deepEqual(crop("bottom 5").storyboard.project.crop, { top: 0, bottom: 0.05 });
+  assert.deepEqual(board(["## S", "1. H: Sees it."]).storyboard.project.crop, { top: 0, bottom: 0 });
+  for (const bad of ["4%", "top 30%", "top 4%, top 5%", "left 4%", "top", "top 4%,"]) refusedWith(crop(bad), 3, "crop says how much");
+});
+
+test("a caption that starts with Sees is split into what the user sees and what they do", () => {
+  assert.deepEqual(splitCaption('Sees the dishes and prices. Adds dishes, taps "Checkout".', "en"),
+    { sees: "The dishes and prices.", does: 'Adds dishes, taps "Checkout".' });
+  assert.deepEqual(splitCaption("Sees \u201CPayment failed\u201D. Taps Try again. Waits.", "en"),
+    { sees: "\u201CPayment failed\u201D.", does: "Taps Try again. Waits." });
+  assert.deepEqual(splitCaption("Sees the order number.", "en"), { sees: "The order number.", does: "" });
+  assert.deepEqual(splitCaption("يرى القائمة. يضغط ادفع.", "ar"), { sees: "القائمة.", does: "يضغط ادفع." });
+});
+
+test("a caption written the old way, without Sees, is all what the user does", () => {
+  assert.deepEqual(splitCaption('Types email and password, taps "Sign in".', "en"),
+    { sees: "", does: 'Types email and password, taps "Sign in".' });
+  assert.deepEqual(splitCaption("Seesaw page opens.", "en"), { sees: "", does: "Seesaw page opens." });
+  assert.deepEqual(splitCaption("", "en"), { sees: "", does: "" });
+});
+
+test("the page's colours follow the app: light or dark words, and readable words on the accent", () => {
+  const dark = theme.theme("#0a0e0d", "#62d49f");
+  assert.equal(dark.dark, true);
+  assert.ok(theme.contrast(dark.ink, dark.bg) > 7, "words on a dark stage are light");
+  assert.ok(theme.contrast(dark.onAcc, dark.acc) > 4.5, "words on the accent can be read");
+  const light = theme.theme("#f3f4f6", "#0b7a83");
+  assert.equal(light.dark, false);
+  assert.ok(theme.contrast(light.ink, light.bg) > 7);
+  assert.ok(theme.contrast(light.onAcc, light.acc) > 4.5);
+  assert.ok(theme.contrast(light.mute, light.bg) > 3, "the small grey words can still be read");
+  assert.ok(theme.contrast(dark.mute, dark.bg) > 3);
+  assert.deepEqual(theme.theme("", "").acc, theme.DEFAULT.accent);
+});
+
+test("colours are read as 3 or 6 hex digits and nothing else", () => {
+  assert.equal(theme.hex("#ABC"), "#aabbcc");
+  assert.equal(theme.hex(" #0a0e0d "), "#0a0e0d");
+  for (const bad of ["", "red", "#12", "#1234567", "0a0e0d", "#ggg", "rgb(1,2,3)"]) assert.equal(theme.hex(bad), "", bad);
 });

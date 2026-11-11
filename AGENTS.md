@@ -21,9 +21,10 @@ to the template, open each example in a browser and look at every page, or on a 
 ## Rules for this repository
 
 - Keep `skills/frameflow/` clean: it is installed and uploaded as it is. No test files, no drawn PDFs.
-- The look lives in `skills/frameflow/assets/template/frameflow/frameflow.css` and the sizes in
-  `layout.js`. They are the owner's decisions: never change fonts, colours or the page shape without his yes.
-- `model.js` and `layout.js` never touch the page (no `document`); only `render.js` does. That keeps them
+- The look lives in `skills/frameflow/assets/template/frameflow/frameflow.css`, the sizes in `layout.js` and
+  the colour rules in `theme.js`. They are the owner's decisions (ADR 0003): never change fonts, the page
+  shape or how colours are worked out without his yes.
+- `model.js`, `layout.js` and `theme.js` never touch the page (no `document`); only `render.js` does. That keeps them
   testable in Node.
 - After the first release (0.1.0), every change bumps `VERSION` in
   `skills/frameflow/assets/template/frameflow/model.js` and adds a dated `CHANGELOG.md` entry.
