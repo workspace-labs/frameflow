@@ -157,10 +157,8 @@ html.dark .pill.approved { background: #10291b; color: #62d49f; }
 .dev.thumb { border-radius: 5px; opacity: .42; box-shadow: 0 0 0 1px var(--line); }
 .dev.thumb.on { opacity: 1; box-shadow: 0 0 0 2px var(--acc); }
 .dev.mini { box-shadow: 0 0 0 4px var(--bezel), 0 0 0 5px var(--bezel-line), 0 12px 26px rgba(0, 0, 0, .3); }
-.dev.tilt { transform: rotate(-5deg); box-shadow: 0 0 0 8px var(--bezel), 0 0 0 9px var(--bezel-line), 0 40px 120px var(--glow); }
-.dev.tilt.phone { transform: rotate(5deg); }
-html[dir="rtl"] .dev.tilt { transform: rotate(5deg); }
-html[dir="rtl"] .dev.tilt.phone { transform: rotate(-5deg); }
+/* The cover's device: straight and whole. No soft shadow: some PDF readers draw one as a flat grey block. */
+.dev.front { box-shadow: 0 0 0 7px var(--bezel), 0 0 0 8px var(--bezel-line); }
 
 /* Pictures sit over the sketch; a missing one leaves the sketch and says so. The frame takes the picture's own
    shape, so the whole picture shows (less whatever "crop" cuts off); only the small strip crops to its box. */
@@ -238,3 +236,12 @@ html[dir="rtl"] .tag { font-size: 14px; }
 .problems p { color: #6b7080; font-size: 14px; margin-bottom: 18px; }
 .problems ol { padding-inline-start: 22px; font-size: 14px; line-height: 1.55; }
 .problems li { margin-bottom: 6px; }
+
+/* On paper a frame keeps its bezel and loses its soft glow: some PDF readers (Preview on a Mac) draw a
+   blurred shadow as a flat block behind the screen. Last in the file so it wins over the rules above. */
+@media print {
+  .dev.hero.phone, .dev.hero.website { box-shadow: 0 0 0 6px var(--bezel), 0 0 0 7px var(--bezel-line); }
+  .dev.hero.tablet { box-shadow: 0 0 0 7px var(--bezel), 0 0 0 8px var(--bezel-line); }
+  .dev.hero.desktop { box-shadow: 0 0 0 1px var(--bezel-line); }
+  .dev.mini { box-shadow: 0 0 0 4px var(--bezel), 0 0 0 5px var(--bezel-line); }
+}

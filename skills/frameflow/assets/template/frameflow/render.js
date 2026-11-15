@@ -64,8 +64,8 @@
     var W = ctx.W;
     ctx.sheet.classList.add("cover");
 
-    var first = ctx.board.stories[0].screens[0];
-    device(ctx, p.kind, first, page.device, "tilt");
+    var shown = ctx.board.stories[p.cover.story].screens[p.cover.screen];
+    device(ctx, p.kind, shown, page.device, "front");
 
     var count = ctx.board.stories.length;
     var col = el("div", "covtext" + (count > 9 ? " full" : ""));

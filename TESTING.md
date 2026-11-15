@@ -1,5 +1,12 @@
 # How frameflow was tested
 
+## The first page — 0.4.0, 15 November 2026
+
+The cover's screen is drawn straight and whole, and `- cover:` picks which screen it shows. **73 passed,
+0 failed, 3 skipped** on one Node.js version on a Mac (one new reader test, one layout test rewritten);
+the native Mac checks, the other Node.js versions and Windows were not run for this version. The cover was
+looked at as a picture for a tablet with real screenshots and for every example. No second AI has reviewed it.
+
 ## The new look — 0.3.0, 11 November 2026
 
 Version 0.3.0 replaced the drawing (one screen a page, the app's own colours, tap markers) and was merged

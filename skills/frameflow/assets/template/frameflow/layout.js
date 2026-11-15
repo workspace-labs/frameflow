@@ -29,7 +29,7 @@
   var COVER = {
     text: { x: 56, y: 84, w: 400, h: 630 },
     meta: { x: 56, y: 728, w: 1010, h: 38 },
-    wide: { x: 480, y: 150, w: 800, h: 500 },     // runs off the page's right edge on purpose
+    wide: { x: 496, y: 110, w: 562, h: 590 },     // whole on the page, sideways or upright
     phone: { x: 690, y: 112, w: 262, h: 568 }
   };
 

@@ -14,7 +14,7 @@ The skill is the folder [`skills/frameflow/`](skills/frameflow/): its instructio
 [`SKILL.md`](skills/frameflow/SKILL.md), and a page template that draws the storyboard in any browser.
 **Nothing to install.**
 
-**Version 0.3.0** · 75 regression tests (including 3 optional native Mac checks) · [current and historical test evidence](TESTING.md)
+**Version 0.4.0** · 76 regression tests (including 3 optional native Mac checks) · [current and historical test evidence](TESTING.md)
 
 ---
 

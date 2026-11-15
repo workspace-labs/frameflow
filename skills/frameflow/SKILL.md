@@ -67,6 +67,10 @@ colour and `- accent:` to its main button colour, as hex (`#0a0e0d`). Take them 
 the app itself; never invent them. No design yet: leave both out and the page wears frameflow's own. The
 frame follows the kind (phone, tablet, window, browser); the page's type and structure stay frameflow's.
 
+**The cover shows one screen, whole.** By default the very first one. When that is a splash, a login or
+another nearly empty screen, add `- cover: 1.2` (story 1, screen 2) so the cover shows the screen that
+shows the app best, usually its home.
+
 **Write each caption as what the user sees, then what they do:** `Sees the dishes and prices. Adds dishes,
 taps "Checkout".` The first sentence after "Sees" is printed under SEES, the rest under DOES.
 

@@ -402,3 +402,13 @@ test("colours are read as 3 or 6 hex digits and nothing else", () => {
   assert.equal(theme.hex(" #0a0e0d "), "#0a0e0d");
   for (const bad of ["", "red", "#12", "#1234567", "0a0e0d", "#ggg", "rgb(1,2,3)"]) assert.equal(theme.hex(bad), "", bad);
 });
+
+// ---------- 0.4.0: the cover's screen ----------
+
+test("cover picks the screen the cover shows; without it, the very first one", () => {
+  const cover = (v) => parse("# A\n- kind: tablet\n" + (v ? "- cover: " + v + "\n" : "") + "## S\n1. Splash: Sees it.\n2. Home: Sees it.\n## T\n1. List: Sees it.");
+  assert.deepEqual(cover("").storyboard.project.cover, { story: 0, screen: 0 });
+  assert.deepEqual(cover("1.2").storyboard.project.cover, { story: 0, screen: 1 });
+  assert.deepEqual(cover("2.1").storyboard.project.cover, { story: 1, screen: 0 });
+  for (const bad of ["2", "1.3", "3.1", "0.1", "1.0", "home", "1.2.1", ""]) refusedWith(cover(bad || " "), 3, "cover says which screen");
+});

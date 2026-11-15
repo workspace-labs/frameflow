@@ -3,6 +3,24 @@
 All notable changes to this project. The version is `VERSION` in
 `skills/frameflow/assets/template/frameflow/model.js`.
 
+## [0.4.0] - 2026-11-15
+
+The first page, after the owner ran 0.3.0 on a tablet app whose first screen is a splash: the cover showed
+a nearly empty, tilted screen cut by the page's edge, with a coloured glow under it. He picked "whole
+tablet" from three covers.
+
+### Changed
+
+- **The cover's screen is straight and whole on the page**, sideways or upright, with no shadow. The tilt
+  and the run off the page's right edge are gone (the tilt made words inside the screen look rough).
+- **In the PDF no frame has a soft glow any more**, on the cover or inside: Preview on a Mac drew each
+  blurred shadow as a flat grey or coloured block behind the screen. On screen the inside pages keep it.
+
+### Added
+
+- **`- cover: 1.2`** picks which screen the cover shows (story 1, screen 2), for an app that opens on a
+  splash or a login. Without it, the very first screen, as before.
+
 ## [0.3.0] - 2026-11-11
 
 A new look, after the owner ran 0.2.0 on a real tablet app and found the screens a third of the page and

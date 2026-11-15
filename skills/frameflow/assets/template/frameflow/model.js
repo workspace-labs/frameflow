@@ -7,12 +7,12 @@
   // The colour rules live in theme.js: loaded before this file on the page, required in Node's tests.
   var colours = (root.Frameflow && root.Frameflow.theme) || require("./theme.js");
 
-  var VERSION = "0.3.0";
+  var VERSION = "0.4.0";
 
   var KINDS = ["phone", "tablet", "desktop", "website"];
   var LANGUAGES = ["en", "ar"];
   var SKETCHES = ["form", "list", "grid", "detail", "done", "message", "blank"];
-  var SETTINGS = ["kind", "language", "client", "by", "about", "version", "status", "approved", "date", "phone-version", "stage", "accent", "crop"];
+  var SETTINGS = ["kind", "language", "client", "by", "about", "version", "status", "approved", "date", "phone-version", "stage", "accent", "crop", "cover"];
   var LIMITS = {
     projectName: 60, storyTitle: 48, storySummary: 140, screenName: 24, caption: 160,
     errorCaption: 140, person: 60, about: 200, stories: 12, screens: 24, errorsPerScreen: 2, markLabel: 28, crop: 25
@@ -363,6 +363,16 @@
         });
       });
     });
+
+    // Which screen the cover shows, as story.screen (2.1 = story 2, screen 1). Without it, the very first screen.
+    p.cover = { story: 0, screen: 0 };
+    if (s.cover !== undefined) {
+      var cv = /^(\d+)\.(\d+)$/.exec(westernDigits(s.cover));
+      var cs = cv && board.stories[cv[1] - 1];
+      if (cs && cs.screens[cv[2] - 1]) p.cover = { story: cv[1] - 1, screen: cv[2] - 1 };
+      else problem(settingLines.cover, "cover says which screen the cover shows, as the story's number, a dot, the screen's number: " +
+        "- cover: 1.2 (story 1, screen 2). It says " + quote(s.cover) + (cv ? ", and there is no such screen." : "."));
+    }
 
     function tooLong(line, label, value, limit) {
       if (value && [...value].length > limit) problem(line, label + " is " + [...value].length + " characters. Keep it to " + limit + ".");

@@ -74,6 +74,7 @@ The file starts with one `# ` line: the project's name. Settings follow, one per
 | `phone-version` | no | `yes` or `no` (default). Websites only: each browser frame also shows a small phone. |
 | `stage` | no | The app's background colour, as hex: `#0a0e0d` or `#fff`. The pages take it as their background; a dark one turns the words light. |
 | `accent` | no | The app's main button colour, as hex. The big number, the tap marker and "Does" are drawn in it. |
+| `cover` | no | Which screen the cover shows, as story.screen: `1.2` is story 1, screen 2. Default: the very first screen. Pick the screen that shows the app best when the first one is a splash or a login. |
 | `crop` | no | How much of every picture's top and bottom to cut off, to drop the device's own status or navigation bar: `top 4%`, `bottom 6%`, or both with a comma. Up to 25% each. |
 
 The storyboard follows its app: `stage` and `accent` are the app's own two colours, taken from its design.

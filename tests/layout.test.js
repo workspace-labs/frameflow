@@ -99,7 +99,7 @@ test("the page loads the colour rules before the reader, and every script it nam
   scripts.forEach((s) => assert.ok(fs.existsSync(path.join(TEMPLATE, s)), s));
 });
 
-test("the cover's words stay on the page; a wide screen runs off its right edge on purpose", () => {
+test("the cover's words and its device stay on the page, apart from each other", () => {
   const wide = layout.plan(story("tablet", 2)).pages[0];
   const phone = layout.plan(story("phone", 2)).pages[0];
   for (const cover of [wide, phone]) {
@@ -107,7 +107,7 @@ test("the cover's words stay on the page; a wide screen runs off its right edge 
     assert.ok(!overlap(cover.text, cover.meta));
     assert.ok(!overlap(cover.text, cover.device), "the words never sit under the device");
   }
-  assert.ok(wide.device.x + wide.device.w > layout.PAGE.width);
+  assert.ok(wide.device.x + wide.device.w <= layout.PAGE.width && wide.device.y + wide.device.h <= layout.PAGE.height);
   assert.ok(phone.device.x + phone.device.w <= layout.PAGE.width);
 });
 
