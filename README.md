@@ -1,6 +1,6 @@
 # frameflow
 
-![frameflow: three numbered phone frames flowing left to right, with a red dashed frame for when something goes wrong](media/frameflow-hero.png)
+![frameflow: four storyboard pages standing one behind the other, each in its app's own colours: a website, a desktop app, a tablet app and a phone app](media/frameflow-hero-v2.png)
 
 **Turn an app idea into a storyboard your client can approve.**
 
