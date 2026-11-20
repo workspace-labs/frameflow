@@ -7,15 +7,17 @@
   // The colour rules live in theme.js: loaded before this file on the page, required in Node's tests.
   var colours = (root.Frameflow && root.Frameflow.theme) || require("./theme.js");
 
-  var VERSION = "0.4.0";
+  var VERSION = "0.5.0";
 
   var KINDS = ["phone", "tablet", "desktop", "website"];
   var LANGUAGES = ["en", "ar"];
   var SKETCHES = ["form", "list", "grid", "detail", "done", "message", "blank"];
-  var SETTINGS = ["kind", "language", "client", "by", "about", "version", "status", "approved", "date", "phone-version", "stage", "accent", "crop", "cover"];
+  var SETTINGS = ["kind", "language", "client", "by", "about", "goal", "starts", "ends",
+    "version", "status", "approved", "date", "phone-version", "stage", "accent", "crop", "cover"];
   var LIMITS = {
     projectName: 60, storyTitle: 48, storySummary: 140, screenName: 24, caption: 160,
-    errorCaption: 140, person: 60, about: 200, stories: 12, screens: 24, errorsPerScreen: 2, markLabel: 28, crop: 25
+    errorCaption: 140, person: 60, about: 200, stories: 12, screens: 24, errorsPerScreen: 2, markLabel: 28, crop: 25,
+    flowText: 80, decisionQuestion: 32, decisionAnswer: 12
   };
   var PICTURE = /\.(png|jpe?g|webp)$/i;
 
@@ -26,6 +28,8 @@
   var SCREEN = new RegExp("^([" + DIGIT + "]+)\\.\\s+(.*)$");
   // The [sketch] is optional: a screen that shows a picture needs none.
   var SCREEN_BODY = /^(.+?)\s*(?:\[\s*([A-Za-z]+)\s*\])?\s*:\s*(.+)$/;
+  var DECISION = /^\s+\?\s*(.*)$/;
+  var DECISION_BODY = /^([^?؟]+[?؟]):\s*(.*)$/;
   var ERROR = /^\s*!\s*(.*)$/;
   var ERROR_BODY = /^(.+?)\s*:\s*(.+)$/;
   var SHOT = /^\s+(shot|phone-shot)\s*:\s*(.*?)\s*$/i;
@@ -57,6 +61,7 @@
     var story = null;
     var lastScreen = null;
     var lastItem = null;
+    var decisionContext = null;
     var seenTitle = false;
 
     function problem(line, message) { problems.push({ line: line, text: message }); }
@@ -92,6 +97,7 @@
         board.stories.push(story);
         lastScreen = null;
         lastItem = null;
+        decisionContext = null;
         continue;
       }
 
@@ -125,17 +131,25 @@
         continue;
       }
 
+      if ((m = DECISION.exec(raw))) {
+        readDecision(n, m[1]);
+        continue;
+      }
+
       if ((m = SHOT.exec(raw))) {
+        if (decisionContext) decisionContext.hasAttachments = true;
         readShot(n, m[1].toLowerCase(), m[2]);
         continue;
       }
 
       if ((m = MARK.exec(raw))) {
+        if (decisionContext) decisionContext.hasAttachments = true;
         readMark(n, m[1].toLowerCase(), m[2]);
         continue;
       }
 
       if ((m = ERROR.exec(raw))) {
+        if (decisionContext) decisionContext.hasAttachments = true;
         readError(n, m[1]);
         continue;
       }
@@ -155,13 +169,19 @@
         ". A screen looks like: 2. Home [grid]: Sees the restaurants, taps one. → 3");
     }
 
+    function readTarget(text) {
+      var word = westernDigits(text.trim());
+      if (/^end$/i.test(word)) return "end";
+      if (/^\d+$/.test(word)) return Number(word);
+      return null;
+    }
+
     function splitTarget(n, body) {
       var t = TARGET.exec(body);
       if (!t) return { rest: body.trim(), to: null };
-      var word = westernDigits(t[3].trim());
       var rest = t[1].trim();
-      if (/^end$/i.test(word)) return { rest: rest, to: "end" };
-      if (/^\d+$/.test(word)) return { rest: rest, to: Number(word) };
+      var to = readTarget(t[3]);
+      if (to !== null) return { rest: rest, to: to };
       problem(n, "After the last → there must be a screen number or end, and nothing else. It says " + quote(t[2] + t[3]) +
         ". An arrow inside the caption needs a target after it: … → 3.");
       return { rest: rest, to: null, bad: true };
@@ -170,6 +190,7 @@
     function readScreen(n, number, body) {
       var parts = SCREEN_BODY.exec(body);
       lastItem = null;
+      decisionContext = null;
       if (!parts) {
         problem(n, "Screen " + number + " is missing its caption. Write it like: " +
           number + ". Home [grid]: Sees the restaurants. Taps one.");
@@ -187,6 +208,49 @@
       story.screens.push(screen);
       lastScreen = screen;
       lastItem = screen;
+      decisionContext = { line: 0, hasAttachments: false };
+    }
+
+    function readDecision(n, body) {
+      if (!decisionContext) {
+        problem(n, "A ? line must sit under the screen it belongs to.");
+        return;
+      }
+      if (decisionContext.line) {
+        problem(n, "This screen already has a ? line. Keep one.");
+        return;
+      }
+      decisionContext.line = n;
+      if (decisionContext.hasAttachments) {
+        problem(n, "Put the ? line before any !, shot:, phone-shot:, tap: or look: line under this screen.");
+        return;
+      }
+      if (lastScreen.to !== null) {
+        problem(n, "Remove the arrow on the screen's own line: the ? line's two answers already say where it goes.");
+        return;
+      }
+      var parts = DECISION_BODY.exec(body);
+      if (!parts) {
+        problem(n, "Write a question ending with a question mark followed by a colon, like: ? Continue?: Yes → 2, No → end");
+        return;
+      }
+      var replies = parts[2].split(/[,،]/).map(function (reply) { return reply.trim(); });
+      if (replies.length !== 2 || replies.some(function (reply) { return !reply; })) {
+        problem(n, "Write exactly two answers, separated by one comma, like: Yes → 2, No → end.");
+        return;
+      }
+      var answers = [];
+      for (var i = 0; i < replies.length; i++) {
+        var target = TARGET.exec(replies[i]);
+        var label = target && target[1].trim();
+        var to = target && readTarget(target[3]);
+        if (!label || TARGET.test(label) || to === null) {
+          problem(n, "Write each answer as a label followed by → and a screen number or end, like: Yes → 2.");
+          return;
+        }
+        answers.push({ label: label, to: to });
+      }
+      lastScreen.decision = { question: parts[1], answers: answers, line: n };
     }
 
     function readError(n, body) {
@@ -274,6 +338,9 @@
     tooLong(settingLines.client, "client", p.client, LIMITS.person);
     tooLong(settingLines.by, "by", p.by, LIMITS.person);
     tooLong(settingLines.about, "about", p.about, LIMITS.about);
+    ["goal", "starts", "ends"].forEach(function (key) {
+      tooLong(settingLines[key], key, s[key], LIMITS.flowText);
+    });
 
     p.version = 1;
     if (s.version !== undefined) {
@@ -346,6 +413,7 @@
           if (screen.to < 1 || screen.to > count) problem(screen.line, "Screen " + screen.number + " goes to screen " + screen.to + ", but this story has " + count + " screens.");
           else if (screen.to === screen.number) problem(screen.line, "Screen " + screen.number + " goes to itself. Point it to the next screen, or remove the →.");
         }
+        if (screen.decision) checkDecision(screen.decision, screen.number, count);
         if (screen.errors.length > LIMITS.errorsPerScreen) problem(screen.errors[LIMITS.errorsPerScreen].line, "Up to " + LIMITS.errorsPerScreen + " ! lines under one screen. Make the rest their own story.");
         checkPicture(screen.shotLine, screen.shot);
         checkPicture(screen.phoneShotLine, screen.phoneShot);
@@ -376,6 +444,20 @@
 
     function tooLong(line, label, value, limit) {
       if (value && [...value].length > limit) problem(line, label + " is " + [...value].length + " characters. Keep it to " + limit + ".");
+    }
+
+    function checkDecision(decision, screenNumber, count) {
+      tooLong(decision.line, "The question", decision.question, LIMITS.decisionQuestion);
+      decision.answers.forEach(function (answer) {
+        var label = "The answer " + quote(answer.label);
+        tooLong(decision.line, label, answer.label, LIMITS.decisionAnswer);
+        if (answer.to === "end") return;
+        if (answer.to < 1 || answer.to > count) {
+          problem(decision.line, label + " goes to screen " + answer.to + ", but this story has " + count + " screens. Choose a screen in this story or end.");
+        } else if (answer.to === screenNumber) {
+          problem(decision.line, label + " goes back to its own screen. Choose a different screen or end.");
+        }
+      });
     }
 
     function readColour(key) {

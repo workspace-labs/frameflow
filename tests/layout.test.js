@@ -7,6 +7,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { parse } = require("../skills/frameflow/assets/template/frameflow/model.js");
 const layout = require("../skills/frameflow/assets/template/frameflow/layout.js");
+const flowmap = require("../skills/frameflow/assets/template/frameflow/flowmap.js");
 
 const TEMPLATE = path.join(__dirname, "../skills/frameflow/assets/template");
 const SOURCES = [
@@ -52,6 +53,10 @@ function overlap(a, b) {
   return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 }
 
+function screenPages(plan) {
+  return plan.pages.filter((page) => page.type === "screen");
+}
+
 test("every screen gets one page, in order, with each thing that can go wrong on the page after it", () => {
   for (const file of SOURCES) {
     const board = read(file);
@@ -62,16 +67,29 @@ test("every screen gets one page, in order, with each thing that can go wrong on
       screen.errors.forEach((e) => expected.push(`${si}:${screen.number}!${e.name}`));
     }));
     assert.equal(plan.pages[0].type, "cover", file);
-    const got = plan.pages.slice(1).map((p) => `${p.storyIndex}:${p.screen.number}` + (p.error ? `!${p.error.name}` : ""));
+    const got = screenPages(plan).map((p) => `${p.storyIndex}:${p.screen.number}` + (p.error ? `!${p.error.name}` : ""));
     assert.deepEqual(got, expected, file);
     plan.pages.forEach((p, i) => assert.equal(p.number, i + 1));
   }
 });
 
-test("on every page, no box overlaps another and nothing leaves the page", () => {
+test("the cover, flow map, path check and screen pages are ordered and numbered", () => {
+  for (const file of SOURCES) {
+    const board = read(file);
+    const flow = flowmap.plan(board);
+    const plan = layout.plan(board);
+    assert.deepEqual(plan.flowProblems, flow.problems, file);
+    assert.ok(flow.pages.length > 0, file);
+    assert.deepEqual(plan.pages.slice(1, 1 + flow.pages.length).map((p) => p.type), flow.pages.map((p) => p.type), file);
+    assert.ok(plan.pages.slice(1 + flow.pages.length).every((p) => p.type === "screen"), file);
+    assert.equal(screenPages(plan)[0].number, flow.pages.length + 2, file);
+  }
+});
+
+test("on every screen page, no box overlaps another and nothing leaves the page", () => {
   for (const file of SOURCES) {
     const plan = layout.plan(read(file));
-    for (const page of plan.pages.slice(1)) {
+    for (const page of screenPages(plan)) {
       const boxes = boxesOf(plan, page);
       for (const b of boxes) {
         const where = `${path.basename(file)} page ${page.number}: ${b.name}`;
@@ -92,10 +110,10 @@ test("the page is A4 on its side, and frameflow.css agrees", () => {
   assert.match(css, /\.page \{[^}]*width: 1122px; height: 792px;/);
 });
 
-test("the page loads the colour rules before the reader, and every script it names exists", () => {
+test("the page loads the colour rules before the reader and the flow map before rendering", () => {
   const html = fs.readFileSync(path.join(TEMPLATE, "storyboard.html"), "utf8");
   const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(scripts, ["frameflow/strings.js", "frameflow/theme.js", "frameflow/model.js", "frameflow/layout.js", "frameflow/render.js"]);
+  assert.deepEqual(scripts, ["frameflow/strings.js", "frameflow/theme.js", "frameflow/model.js", "frameflow/layout.js", "frameflow/flowmap.js", "frameflow/render.js"]);
   scripts.forEach((s) => assert.ok(fs.existsSync(path.join(TEMPLATE, s)), s));
 });
 
@@ -113,7 +131,7 @@ test("the cover's words and its device stay on the page, apart from each other",
 
 test("the strip shows up to five screens and always the current one, lit once", () => {
   const board = story("desktop", 13);
-  const pages = layout.plan(board).pages.slice(1);
+  const pages = screenPages(layout.plan(board));
   assert.equal(pages.length, 13);
   pages.forEach((page, i) => {
     const shown = page.strip.map((t) => t.index);
@@ -123,7 +141,7 @@ test("the strip shows up to five screens and always the current one, lit once", 
     assert.deepEqual(page.strip.filter((t) => t.on).map((t) => t.index), [i]);
     assert.equal(page.strip[page.strip.length - 1].arrow, null, "no arrow after the last one");
   });
-  assert.deepEqual(layout.plan(story("tablet", 2)).pages[1].strip.map((t) => t.index), [0, 1]);
+  assert.deepEqual(screenPages(layout.plan(story("tablet", 2)))[0].strip.map((t) => t.index), [0, 1]);
 });
 
 test("windowOf keeps the current screen near the middle and never runs past either end", () => {
@@ -136,34 +154,34 @@ test("windowOf keeps the current screen near the middle and never runs past eith
 });
 
 test("a phone page shows the screen before and the screen after; the ends show one", () => {
-  const pages = layout.plan(story("phone", 3)).pages.slice(1);
+  const pages = screenPages(layout.plan(story("phone", 3)));
   assert.deepEqual(pages.map((p) => [p.sides.prev && p.sides.prev.screen.number, p.sides.next && p.sides.next.screen.number]),
     [[null, 2], [1, 3], [2, null]]);
   assert.equal(pages[0].strip, undefined, "a phone has no strip");
-  const one = layout.plan(story("phone", 1)).pages[1];
+  const one = screenPages(layout.plan(story("phone", 1)))[0];
   assert.deepEqual([one.sides.prev, one.sides.next], [null, null]);
 });
 
 test("a phone's \"if it goes wrong\" page shows its own screen before it and the way back after it", () => {
   const result = parse(["# App", "- kind: phone", "## S", "1. One [form]: Sees it. → 2", "   ! Bad: Sees red. → 1", "2. Two [done]: Sees it."].join("\n"));
   assert.deepEqual(result.problems, []);
-  const bad = layout.plan(result.storyboard).pages[2];
+  const [one, bad] = screenPages(layout.plan(result.storyboard));
   assert.equal(bad.error.name, "Bad");
   assert.equal(bad.sides.prev.screen.number, 1);
   assert.equal(bad.sides.next, null);
   assert.ok(bad.back);
-  assert.equal(layout.plan(result.storyboard).pages[1].back, null);
+  assert.equal(one.back, null);
 });
 
 test("a website's phone version sits on the big screen's corner, on screen pages only", () => {
   const result = parse(["# Site", "- kind: website", "- phone-version: yes", "## S", "1. One [form]: Sees it. → 2", "   ! Bad: Sees red. → 1", "2. Two [done]: Sees it."].join("\n"));
   assert.deepEqual(result.problems, []);
-  const [, one, bad] = layout.plan(result.storyboard).pages;
+  const [one, bad] = screenPages(layout.plan(result.storyboard));
   assert.ok(overlap(one.mini, one.hero));
   assert.ok(one.mini.x + one.mini.w <= layout.PAGE.width && one.mini.y + one.mini.h <= layout.STRIP.y);
   assert.ok(!overlap(one.mini, one.col));
   assert.equal(bad.mini, null);
-  assert.equal(layout.plan(story("website", 1)).pages[1].mini, null);
+  assert.equal(screenPages(layout.plan(story("website", 1)))[0].mini, null);
 });
 
 test("fitFrame: the largest frame of the picture's shape that fits the room, centred", () => {

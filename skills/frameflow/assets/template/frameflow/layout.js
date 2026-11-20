@@ -65,13 +65,15 @@
     return { v: y > 0.75 ? "up" : "down", h: x > 0.5 ? "left" : "right" };
   }
 
-  /* The whole document: a cover, then every screen on its own page, each "if it goes wrong" on the page after
-     its screen. Returns { kind, page, pages: [ cover | screen page ] }. */
+  /* After the cover come the flow pages, then one page per screen with its error pages right after it. */
   function plan(board) {
     var kind = board.project.kind;
     if (!SHAPE[kind]) throw new Error("layout: unknown kind " + kind);
     var phone = kind === "phone";
     var pages = [{ type: "cover", text: COVER.text, meta: COVER.meta, device: phone ? COVER.phone : COVER.wide }];
+    // Resolve the map when planning so it can use PAGE and mirrorX from this module.
+    var flow = (root.Frameflow.flowmap || require("./flowmap.js")).plan(board);
+    pages.push.apply(pages, flow.pages);
 
     board.stories.forEach(function (story, storyIndex) {
       story.screens.forEach(function (screen, index) {
@@ -82,7 +84,7 @@
     });
 
     pages.forEach(function (p, i) { p.number = i + 1; });
-    return { kind: kind, page: PAGE, top: TOP, foot: FOOT, pages: pages };
+    return { kind: kind, page: PAGE, top: TOP, foot: FOOT, pages: pages, flowProblems: flow.problems };
   }
 
   function place(base, error, phone, phoneVersion) {

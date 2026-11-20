@@ -12,6 +12,9 @@ own colours. The client approves it before anything is built. If the screens are
 those designs from the very first version; if not, they show sketches until the app is built and real
 screenshots replace them.
 
+The flow map and path check come after the cover. They show the goal, the route through each story and
+places where users may get stuck.
+
 It is two files in the project's `docs/app-flow/`: **`app-flow.md`**, the text copy (the master, which any
 agent can read), and **`storyboard.html`**, the page that draws it, plus the PDF printed from that page. A
 browser is the only need: nothing to install.
@@ -46,14 +49,15 @@ known from the conversation? Do not ask, use it.
 ## 2. Understand the screens
 
 Ask the rest of [references/questions.md](references/questions.md) in rounds of two or three: who uses it,
-what they see first, the main things they do (each becomes a story), each story step by step, what can go
-wrong, where it ends. **Never invent a screen, a tap or an error.** Anything unknown is a question.
+what they want to achieve, where they start and where they finish. Ask about the main things they do
+(each becomes a story), then walk each story step by step, including real decisions and what can go wrong.
+**Never invent a screen, a tap or an error.** Anything unknown is a question.
 
 ## 3. Read it back
 
 Say the plan back and wait for *"yes, that's it"*: the stories, with their screen counts and what can go
 wrong. The person may merge, split, rename or reorder. Every screen gets its own page, and so does every
-"if it goes wrong": say how many pages that makes.
+"if it goes wrong". Say how many screen and error pages that makes, plus the cover and the map and check.
 
 ## 4. Write the text copy
 
@@ -74,6 +78,11 @@ shows the app best, usually its home.
 **Write each caption as what the user sees, then what they do:** `Sees the dishes and prices. Adds dishes,
 taps "Checkout".` The first sentence after "Sees" is printed under SEES, the rest under DOES.
 
+**Write the goal and real branches.** Use `goal`, `starts` and `ends` for the agreed goal, first screen
+and outcome. Under a screen with two possible next steps, add a `?` line before its other indented lines.
+Put the main answer first and give each answer a destination in the same story, or `end`. The `?` line
+supplies both destinations for that screen.
+
 **An approved design comes first.** When the person has an approved design, every screen gets a `shot:`
 line from version 1: a picture of that approved screen, with demo data. Take them yourself with a tool you
 already have (a browser you can drive, at the phone's real size and 2× or 3× sharp), or ask the person for
@@ -90,11 +99,11 @@ If the pictures show the device's own status or navigation bar, cut it off every
 
 - **A storyboard already there?** If `docs/app-flow/` already has `app-flow.md` or `storyboard.html`, read
   them first and update them. Never write over someone's file with a new one.
-- **Made with an older frameflow?** If `docs/app-flow/frameflow/` has no `theme.js`, the storyboard was drawn
-  in the old look. Tell the person it will be redrawn in the new one, then replace the `frameflow/` folder
-  and `storyboard.html` with this skill's (they are the template's files, not the person's) and put the text
-  of `app-flow.md` back into the page. The text copy reads as it is; add colours, `Sees …` captions and
-  `tap:` lines as you update it.
+- **Made with an older frameflow?** If the existing page does not load `frameflow/flowmap.js`, tell the
+  person the template needs an update to draw the map. Back up the page and keep the master text. Refresh
+  the template's `frameflow/` files and `storyboard.html` with this skill's versions, then put the master
+  text back into the page. If the master lives only in the page, update the template around its app-flow
+  block in place, keeping the block intact. Keep existing screenshots and other project files.
 - **"No text file"?** Respect it: do not save `app-flow.md`. The same text then lives only inside
   `storyboard.html` (its app-flow block, next step), and that block is the master: read it, change it there,
   and never copy the template over that page again. Everything below that says `app-flow.md` means that
@@ -116,9 +125,12 @@ If the pictures show the device's own status or navigation bar, cut it off every
 3. Check the page drew and make the PDF: [references/pdf.md](references/pdf.md). If it refuses, fix
    `app-flow.md` by the line numbers it gives, copy it in again, check again. Never edit the template to
    silence a refusal.
+   The template draws the flow map and path check automatically. Show the person any ✗ and its explanation
+   so they can decide what to change.
 4. Look at the pages if you can. Does every screen match what the person said? Is every "if it goes wrong"
    there? With an approved design: is every frame its real screen, and can its words be read? Is every tap
-   marker on the thing the user taps, with its label clear of the words around it?
+   marker on the thing the user taps, with its label clear of the words around it? Does each map arrow
+   reach the right place, clear of the boxes and labels?
 
 ## 6. The client's approval
 

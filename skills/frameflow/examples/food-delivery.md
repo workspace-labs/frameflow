@@ -3,6 +3,7 @@
 - kind: phone
 - client: Sample client
 - about: Order a meal from nearby restaurants and follow it to the door.
+- goal: Order a meal and track it if you want to.
 - stage: #f3f4f6
 - accent: #f2541b
 - version: 2
@@ -27,5 +28,6 @@ From choosing a restaurant to the order confirmed.
 4. Pay [form]: Sees the card form. Enters the card, taps "Pay now". → 5
    ! Card refused: Sees "Payment failed". Taps "Try again". → 4
    ! No connection: Sees "You are offline". Taps "Retry". → 4
-5. Confirmed [done]: Sees the order number and the delivery time. Taps "Track". → 6
+5. Confirmed [done]: Sees the order number and the delivery time. Can tap "Track" or finish here.
+   ? Track the order?: Track → 6, Finish → end
 6. Tracking [detail]: Sees the rider on the way to the door.

@@ -40,18 +40,23 @@ For a website, also ask once: *"Should each page also show its phone version?"* 
 **3. Who uses it?** One kind of user, or several (a customer and an admin)? Each kind of user gets its own
 stories.
 
-**4. What does the user see first** when they open it? (A welcome, a sign-in, the home page.)
+**4. What does the user want to achieve?** For example, book a visit with a doctor or send a file to
+a teammate. Use this for `goal`.
 
-**5. What are the main things a user does?** Signing in, ordering, booking, paying, changing settings. Each
-one becomes a story, with its own page.
+**5. Where does the flow start?** Ask what the user sees first, such as a welcome screen or home page.
+Use this for `starts`.
 
-**6. For each one, step by step: what do they see, and what do they tap or click?** This gives the screens,
-their order and the captions. Ask about one story at a time.
+**6. Where does the flow end?** Ask what the user sees when they have reached the goal, such as an order
+confirmation. Use this for `ends`.
 
-**7. What can go wrong?** A wrong password, no connection, a refused card, a time already taken. Each becomes
-a red "if it goes wrong" frame under its screen, with its way out: back to which screen, or does it end there?
+**7. What are the main things a user does?** Signing in, ordering, booking, paying and changing settings
+can each be a story. Make sure each story has an ending.
 
-**8. Where does it end?** The order confirmed, back to the home page. Every story needs an ending.
+**8. What do they see, tap or click at each step?** Ask about one story at a time. If a screen has two
+possible next steps, ask the question that decides the route and where each answer leads.
+
+**9. What can go wrong?** A wrong password, a lost connection, a refused card or a time already taken.
+Ask where the user can go from each error screen, or whether the story ends there.
 
 Good follow-ups when an answer is thin: *"What does the button say?"*, *"Where does that take them?"*,
 *"Can they go back from here?"*, *"Is that one screen or two?"*
@@ -62,8 +67,8 @@ A workflow-project file (`.json`) has `parts` (the stages) and, in each, `nodes`
 The steps in the user's lane, in order, are where screens come from:
 
 - A step the user does ("Fills in the form") → a screen with that action in its caption.
-- A decision with a "No" answer the user sees ("Approved?" → "Refused") → a "! " frame under the screen
-  before it.
+- A decision that sends the user along two routes → a `?` line under the screen where the route is
+  decided. A failure the user sees also needs a `!` line if it has its own error page.
 - A `stop` the user sees → a "! … → end" frame. An `end` → the last screen of a story.
 - Steps done by people or systems the user never sees (a manager, a server) → no screen of their own, but
   what the user sees as a result can be a caption ("Sees the request is waiting").
@@ -75,7 +80,8 @@ The workflow tells you the steps, not the screens: confirm the screens with the 
 Before drawing anything, say the plan back in your own words and wait for their yes:
 
 > *"I'll draw 3 stories: **Signing in** (3 screens) · **Ordering food** (6 screens, with 2 things that can go
-> wrong on Pay) · **Settings** (2 screens). One screen a page, so 13 pages and the cover. Is that right?"*
+> wrong on Pay) · **Settings** (2 screens). That's 13 screen and error pages plus the cover, flow map and
+> path check. Is that right?"*
 
 They can keep it, merge two stories, split one, rename them or change the order. Draw only after *"yes,
 that's it"*. Every screen and every "if it goes wrong" is its own page: say the page count in the read-back.

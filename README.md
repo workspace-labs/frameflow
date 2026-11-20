@@ -14,7 +14,7 @@ The skill is the folder [`skills/frameflow/`](skills/frameflow/): its instructio
 [`SKILL.md`](skills/frameflow/SKILL.md), and a page template that draws the storyboard in any browser.
 **Nothing to install.**
 
-**Version 0.4.0** · 76 regression tests (including 3 optional native Mac checks) · [current and historical test evidence](TESTING.md)
+**Version 0.5.0** · [Current and historical test evidence](TESTING.md)
 
 ---
 
@@ -26,16 +26,20 @@ In your project's `docs/app-flow/`:
 |---|---|
 | `app-flow.md` | the storyboard as short, readable text: the master copy any agent can read and update |
 | `storyboard.html` | the page that draws it (open it in Chrome, Edge or Safari) |
-| `<Project> - App flow v1.pdf` | the PDF for the client: a cover, then one page per screen |
+| `<Project> - App flow v1.pdf` | the client PDF with a cover, flow map, path check and screen pages |
 | `screenshots/` | approved screen designs from version 1 when available; real screens after building |
 
 The PDF holds:
 
 1. **A cover**: the app's first screen, its name, one line about it, **Draft for review** or **Approved**
    with the date, the stories with their pages, and who it is for.
-2. **One page per screen**, story by story ("Signing in", "Ordering food"): the screen big, a marker where
+2. **A flow map and path check** immediately after the cover. See where each story starts, branches and
+   ends. The check shows the shortest routes to the end, unreachable screens, decisions with identical
+   destinations and missing ways back from errors. Longer flows get full-size map pages followed by the
+   check on its own page.
+3. **One page per screen**, story by story ("Signing in", "Ordering food"): the screen big, a marker where
    the user taps, its number, what the user **sees** and **does**, and the story's other screens underneath.
-3. **A red page for each "if it goes wrong"**, right after its screen, with the way back.
+4. **A red page for each "if it goes wrong"**, right after its screen, with the way back.
 
 The pages are A4 lying on its side, in the app's own background and button colour.
 
@@ -46,8 +50,8 @@ version). English by default; **Arabic** turns the whole page right to left.
 
 1. The agent asks two things first: **what kind of project** it is, and **whether you have a workflow** for
    it (if you use [workflow-project](https://github.com/workspace-labs/workflow-project), it builds from it).
-2. It **asks about the screens** in small rounds (who uses it, what they see first, what they do, what can
-   go wrong), then **reads the plan back** until you say "yes, that's it".
+2. It **asks about the screens** in small rounds (who uses it, what they want to achieve, where they start
+   and end, what they do and what can go wrong), then **reads the plan back** until you say "yes, that's it".
 3. It writes `app-flow.md` and copies the template; **the page draws itself**. If a line is wrong or a
    caption does not fit, the page refuses with numbered problems instead of a messy drawing.
 4. It makes the PDF (with the Chrome or Edge you already have), or tells you the exact Print settings.
@@ -116,6 +120,7 @@ and no HTML comment openings (`<!--`). These can break the embedded copy before 
 - kind: phone
 - stage: #f3f4f6
 - accent: #f2541b
+- goal: Order a meal from a nearby restaurant.
 - version: 1
 
 ## Ordering food
@@ -129,14 +134,16 @@ From choosing a restaurant to the order confirmed.
 3. Confirmed [done]: Sees the order number.
 ```
 
-The full shape is in [`references/storyboard-format.md`](skills/frameflow/references/storyboard-format.md).
+Add `goal`, `starts` and `ends` to describe the flow in your own words. Use a `?` line when a screen has
+two possible next steps. The map and path check are drawn from this same text copy.
+[`Text copy format`](skills/frameflow/references/storyboard-format.md)
 
 ## How it was tested
 
 The original 0.1.0 release had 64 automated tests, 8 planted bugs caught, and 4 rounds of independent
 review that found 11 problems. The 0.2.1 repair added targeted parser, shell and native Mac regressions.
-Version 0.3.0 redrew the pages and rewrote the layout tests for them; its new drawing has not had a second
-review yet. Current results and the dated historical record are kept separately in [`TESTING.md`](TESTING.md).
+Version 0.3.0 redrew the pages and rewrote the layout tests. Version 0.5.0 adds tests for decision syntax,
+map geometry, Arabic direction, text contrast and path checks. [`Current results and test history`](TESTING.md)
 
 ## Limits
 

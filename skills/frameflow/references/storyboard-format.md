@@ -13,8 +13,10 @@ wait for a browser refusal.
 
 - A complete small file
 - The heading and settings
+- Flow map cards
 - Stories
 - Screens
+- Decisions
 - When something goes wrong
 - Screenshots
 - Where the user taps
@@ -30,6 +32,7 @@ wait for a browser refusal.
 - kind: phone
 - client: Sample client
 - about: Order a meal from nearby restaurants and track it to the door.
+- goal: Place an order for delivery.
 - stage: #f3f4f6
 - accent: #f2541b
 - version: 1
@@ -67,6 +70,9 @@ The file starts with one `# ` line: the project's name. Settings follow, one per
 | `client` | no | Who it is for. Shown as "Prepared for" on the cover. |
 | `by` | no | Who made it: the person's or company's own name. Shown as "Prepared by". |
 | `about` | no | One sentence: what the app is. Shown on the cover. |
+| `goal` | no | What the user wants to achieve. Shown on the flow map. |
+| `starts` | no | Where the flow starts. Shown on the flow map. |
+| `ends` | no | Where the flow ends. Shown on the flow map. |
 | `version` | no | A whole number: `1`, `2`, `3`… Default `1`. Shown as v1, v2… |
 | `status` | no | `draft` (default) or `approved`. |
 | `approved` | when `status: approved` | The day the client approved it: `YYYY-MM-DD`. |
@@ -80,6 +86,18 @@ The file starts with one `# ` line: the project's name. Settings follow, one per
 The storyboard follows its app: `stage` and `accent` are the app's own two colours, taken from its design.
 Without them the pages wear frameflow's own light grey and blue. The two must be different enough to see one
 on the other, or the page refuses.
+
+## Flow map cards
+
+`goal`, `starts` and `ends` are optional. Each takes up to 80 characters. Use them to describe the goal,
+starting point and outcome in the user's words. When omitted, the map takes:
+
+- **Goal** from `about`, or the first story's title when `about` is also absent.
+- **Starts** from the first story's first screen name.
+- **Ends** from the last story's last screen name.
+
+The map and path check use the same text as the screen pages. A failed check appears in the PDF with an
+explanation. An input or layout refusal gives a problem to fix before a storyboard can be drawn.
 
 ## Stories
 
@@ -105,9 +123,36 @@ Screens are numbered from 1 in each story, in the order the user sees them:
   are.
 - `→ 4` where the tap goes. Leave it out to go to the next screen; the last screen with nothing after it
   is the end. `→ end` ends the story early. `->` works too, and Arabic digits (`→ ٤`) read as numbers.
+  If the last screen links back to an earlier screen, the map shows both the return and the story's End.
 - The last arrow on a line must be followed by a number or `end` and nothing else; anything else
   (`→ banana`, `→ 2 3`, `→ end now`) is refused.
   An arrow inside the caption is fine when the target comes after it: `Swipes left → right → 4`.
+
+## Decisions
+
+When a screen has two possible next steps, write one indented `?` line under it. This example starts at
+a welcome screen and continues either to sign in or to create an account.
+
+```markdown
+1. Welcome [blank]: Sees how to get started. Taps "Continue".
+   ? Have an account?: Yes → 3, No → 2
+2. Sign up [form]: Sees the sign-up form. Creates an account. → 3
+3. Sign in [form]: Sees the sign-in form. Signs in.
+```
+
+- Finish the question with `?` or `؟`, then a colon. The question, including the question mark, takes up
+  to 32 characters.
+- Give exactly two answers separated by `,` or `،`. Each has a label of up to 12 characters, an arrow
+  (`→` or `->`), and a screen number or `end`. Arabic digits such as `٣` work as screen numbers.
+- Write the main answer first. Its label is green and the second answer is shown below with a red label.
+- Put the decision before any `!`, `shot:`, `phone-shot:`, `tap:` or `look:` line for that screen. Leave
+  any destination off the screen's own caption line, since the decision already gives both destinations.
+
+The reader reports the decision's line number if it has no question mark, the wrong number of answers,
+an overlong label or question, a missing or invalid target, or a target that points back to its own
+screen. It also refuses a decision after the screen's indented details, a second decision on the same
+screen, or a decision on a screen that already has an arrow to a destination. Answers can point to the
+same destination, which the path check flags for review.
 
 ## When something goes wrong
 
@@ -192,6 +237,10 @@ An indented `tap:` line under a screen (or under its `!` line) marks where the u
 | `tap:` or `look:` label | 28 characters |
 | `client`, `by` | 60 characters |
 | `about` | 200 characters |
+| `goal`, `starts`, `ends` | 80 characters each |
+| Decision question | 32 characters, including the question mark |
+| Decision answer label | 12 characters |
+| Decisions under one screen | 1, with two answers |
 | Stories | 12 |
 | Screens in a story | 24 (one page each) |
 | `!` frames under one screen | 2 |

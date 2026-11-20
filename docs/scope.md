@@ -5,6 +5,9 @@
 - Draws an app's **screens as a numbered storyboard**: one screen a page, shown big, with a marker where
   the user taps; beside it the number and what the user sees and does; under it the story's other screens,
   small; and a red page for what happens when something goes wrong.
+- Draws a **flow map and path check** after the cover from the same text copy. The map shows each story's
+  start, decisions, error routes and end. The check looks for a route to the end, unreachable screens,
+  duplicate decision destinations and ways to recover from errors.
 - For a **phone app, tablet app, desktop app or website**: the frame follows the kind (phone, tablet,
   app window, browser). A website can also show its phone version.
 - **Before building**: approved screen designs from version 1 when available; otherwise simple sketches,

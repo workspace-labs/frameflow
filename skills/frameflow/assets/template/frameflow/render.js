@@ -11,6 +11,7 @@
   var words = F.strings.words("en");
   // Every device frame drawn, with the room it may use: sized once its picture's shape is known (settleFrames).
   var frames = [];
+  var flowFits = [];
 
   function start() {
     var source = document.getElementById("app-flow");
@@ -19,7 +20,8 @@
     words = F.strings.words(String(result.storyboard.project.settings.language || "en").toLowerCase());
     if (!result.ok) return refuse(result.problems);
     try {
-      draw(result.storyboard);
+      var problems = draw(result.storyboard);
+      if (problems) return refuse(problems);
     } catch (err) {
       return refuse([{ line: 0, text: words.notDrawn + err.message }]);
     }
@@ -31,6 +33,9 @@
   function draw(board) {
     var p = board.project;
     var plan = L.plan(board);
+    if (plan.flowProblems.length) return plan.flowProblems.map(function (problem) {
+      return { line: problem.line, text: F.strings.fill(words.flow[problem.key], problem) };
+    });
     var html = document.documentElement;
     var ctx = { board: board, plan: plan, W: words, rtl: p.language === "ar", total: plan.pages.length, sheet: null };
 
@@ -43,7 +48,8 @@
     plan.pages.forEach(function (page) {
       ctx.sheet = el("section", "page");
       if (page.type === "cover") cover(ctx, page);
-      else screenPage(ctx, page);
+      else if (page.type === "screen") screenPage(ctx, page);
+      else flowPage(ctx, page);
       book.appendChild(ctx.sheet);
     });
     document.body.appendChild(text("div", "print-hint", words.printHint));
@@ -56,6 +62,7 @@
     var vars = { bg: t.bg, ink: t.ink, mute: t.mute, line: t.line, acc: t.acc, app: t.acc, "acc-rgb": t.accRgb, "on-acc": t.onAcc,
       red: t.red, "red-rgb": t.redRgb, "on-red": t.onRed, bezel: t.bezel, "bezel-line": t.bezelLine, glow: t.glow, "glow-red": t.glowRed };
     Object.keys(vars).forEach(function (k) { html.style.setProperty("--" + k, vars[k]); });
+    Object.keys(t.map).forEach(function (k) { html.style.setProperty("--map-" + k, t.map[k]); });
     html.classList.toggle("dark", t.dark);
   }
 
@@ -150,6 +157,7 @@
     var W = ctx.W;
     function named(template, n) { return F.strings.fill(template, { n: n, t: q(ctx, story.screens[n - 1].name) }); }
     if (e) return e.to === "end" ? { kind: "end", text: W.endsHere } : { kind: "jump", text: named(W.backTo, e.to) };
+    if (s.decision) return null;
     if (s.to === "end" || (s.to === null && s.number === story.screens.length)) return { kind: "end", text: W.storyEnds };
     if (s.to === null || s.to === s.number + 1) return null;
     return { kind: "jump", text: named(W.goesTo, s.to) };
@@ -193,14 +201,250 @@
     }
   }
 
-  function footer(ctx, n) {
+  function footer(ctx, n, onMap) {
     var p = ctx.board.project;
     var W = ctx.W;
     var f = el("div", "foot");
+    if (onMap) f.style.color = mapColour("muted");
     f.appendChild(dotted("span", "", [p.name, W.appFlow, "v" + p.version, p.status === "approved" ? W.approved : W.draft]));
     if (n === ctx.total) f.appendChild(text("span", "credit", W.madeWith));
     f.appendChild(text("span", "", F.strings.fill(W.pageOf, { n: n, m: ctx.total })));
     place(ctx, f, ctx.plan.foot);
+  }
+
+  // ---------- map and path check ----------
+
+  function svg(tag, attrs, parent) {
+    var node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    Object.keys(attrs).forEach(function (key) { node.setAttribute(key, attrs[key]); });
+    parent.appendChild(node);
+    return node;
+  }
+
+  function mapColour(name) { return "var(--map-" + name + ")"; }
+
+  function flowPage(ctx, page) {
+    var W = ctx.W.flow;
+    var top = el("div", "top");
+    var part = page.mapCount > 1 ? F.strings.fill(W.mapPage, { n: page.index + 1, m: page.mapCount }) : W.title;
+    top.appendChild(text("span", "label left", ctx.board.project.name + " · " + ctx.W.appFlow));
+    top.appendChild(text("span", "label", page.type === "flow-check" ? W.check : part));
+    Array.from(top.children).forEach(function (label) { label.style.color = mapColour("muted"); });
+    place(ctx, top, ctx.plan.top);
+
+    var art = svg("svg", { width: L.PAGE.width, height: L.PAGE.height, viewBox: "0 0 1122 792",
+      style: "position:absolute;inset:0;font-family:var(--font)" }, ctx.sheet);
+    flowText(ctx, art, W.title, { x: 56, y: 75, w: 680, h: 37 }, { size: 30, weight: 800 });
+    if (page.type === "flow-map") drawMap(ctx, art, page);
+    if (page.cards) {
+      drawFlowCards(ctx, art, page);
+      drawPathCheck(ctx, art, page);
+    }
+    footer(ctx, page.number, true);
+  }
+
+  function flowBox(ctx, box) {
+    return ctx.rtl ? { ...box, x: L.mirrorX(box.x, box.w) } : box;
+  }
+
+  function flowRect(parent, box, fill, stroke, radius) {
+    return svg("rect", { x: box.x, y: box.y, width: box.w, height: box.h, rx: radius,
+      fill: fill, stroke: stroke, "stroke-width": 1 }, parent);
+  }
+
+  function flowText(ctx, parent, value, room, options) {
+    var center = options.center;
+    var box = options.placed ? room : flowBox(ctx, room);
+    var node = svg("text", {
+      x: center ? box.x + box.w / 2 : ctx.rtl ? box.x + box.w : box.x,
+      direction: ctx.rtl ? "rtl" : "ltr", "text-anchor": center ? "middle" : "start",
+      "font-size": options.size || 14, "font-weight": options.weight || 600,
+      fill: mapColour(options.color || "ink")
+    }, parent);
+    node.textContent = value;
+    flowFits.push({ node: node, box: box, value: value, options: options,
+      message: options.message || F.strings.fill(ctx.W.flow.fitMapText, { t: value }) });
+  }
+
+  function fitFlow(entry) {
+    var node = entry.node;
+    var options = entry.options;
+    var box = entry.box;
+    var words = entry.value.trim().split(/\s+/);
+    var size = options.size || 14;
+    var leading = options.leading || size * 1.22;
+    var maxLines = Math.max(1, Math.floor(box.h / leading));
+    var lines;
+    var widths = options.diamond ? [box.w, box.w * 0.83, box.w * 0.67] : [box.w];
+    for (var width of widths) {
+      lines = [];
+      var line = "";
+      words.forEach(function (word) {
+        var trial = line ? line + " " + word : word;
+        node.textContent = trial;
+        if (line && node.getComputedTextLength() > width && maxLines > 1) {
+          lines.push(line);
+          line = word;
+        } else line = trial;
+      });
+      lines.push(line);
+      if (lines.length > maxLines) continue;
+      if (!options.diamond || lines.length === 1 || width <= box.w * (lines.length === 2 ? 0.84 : 0.68)) break;
+    }
+    var first = options.center ? box.y + (box.h - lines.length * leading) / 2 : box.y;
+    node.textContent = "";
+    var tooWide = lines.some(function (value, i) {
+      var t = svg("tspan", { x: node.getAttribute("x"), y: first + i * leading + size * 0.88 }, node);
+      t.textContent = value;
+      return t.getComputedTextLength() > box.w + 0.5;
+    });
+    return tooWide || lines.length > maxLines ? { line: options.line || 0, text: entry.message } : null;
+  }
+
+  function drawMap(ctx, art, page) {
+    var W = ctx.W.flow;
+    var scale = page.scale;
+    var arrow = {};
+    var defs = svg("defs", {}, art);
+    ["normal", "wrong"].forEach(function (kind) {
+      var color = kind === "wrong" ? "var(--red)" : "var(--mute)";
+      var id = "map-arrow-" + page.number + "-" + kind;
+      var marker = svg("marker", { id: id, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6,
+        markerHeight: 6, orient: "auto" }, defs);
+      svg("path", { d: "M1 1 L9 5 L1 9", fill: "none", stroke: color, "stroke-width": 1.45 }, marker);
+      arrow[kind] = { color: color, ref: "url(#" + id + ")" };
+    });
+    page.links.forEach(function (edge) {
+      var style = arrow[edge.kind === "wrong" ? "wrong" : "normal"];
+      svg("polyline", { points: edge.points.map((p) => p.x + "," + p.y).join(" "),
+        fill: "none", stroke: style.color, "stroke-width": 1.4 * scale, "stroke-linejoin": "round",
+        "marker-end": style.ref }, art);
+      if (edge.labelBox) flowText(ctx, art, edge.label, edge.labelBox, { placed: true, center: true, size: 10.5 * scale,
+        color: edge.kind, line: edge.line, weight: 800 });
+    });
+    page.rows.forEach(function (row) {
+      var badge = 19 * scale;
+      var badgeX = ctx.rtl ? row.x - badge : row.x;
+      flowRect(art, { x: badgeX, y: row.y - 14 * scale, w: badge, h: badge }, mapColour("oval-fill"), mapColour("oval-line"), badge / 2);
+      flowText(ctx, art, String(row.n), { x: badgeX, y: row.y - 14 * scale, w: badge, h: badge },
+        { placed: true, center: true, size: 11 * scale, weight: 800, color: "oval-text" });
+      var inset = 27 * scale;
+      var heading = row.part ? F.strings.fill(W.continued, { t: row.title }) : row.title;
+      flowText(ctx, art, heading, { x: ctx.rtl ? row.x - row.w : row.x + inset, y: row.y - 14 * scale,
+        w: row.w - inset, h: 20 * scale }, { placed: true, size: 15 * scale, weight: 800, line: row.line });
+    });
+    page.nodes.forEach(function (node) {
+      var box = node.box;
+      var isOval = node.type === "start" || node.type === "end";
+      var type = { start: "oval", end: "oval" }[node.type] || node.type;
+      var caption = isOval ? W[node.type] : q(ctx, node.text);
+      if (type === "continuation") {
+        flowRect(art, box, mapColour("oval-fill"), mapColour("oval-line"), 5 * scale);
+        flowText(ctx, art, caption, box, { placed: true, center: true, size: 10 * scale, color: "oval-text", weight: 800 });
+        return;
+      }
+      flowShape(art, box, type, scale);
+      var diamond = type === "decision";
+      var pad = (diamond ? 11 : 6) * scale;
+      flowText(ctx, art, caption, { x: box.x + pad, y: box.y, w: box.w - pad * 2, h: box.h },
+        { placed: true, center: true, diamond: diamond, size: (node.small ? 11 : diamond ? 12 : 13) * scale,
+          weight: 700, color: type + "-text", line: node.line });
+    });
+    drawFlowKey(ctx, art, page.cards ? 691 : 705);
+    if (page.nodes.some((node) => node.type === "continuation")) {
+      flowText(ctx, art, W.continuationKey, { x: 56, y: 724, w: 640, h: 17 }, { size: 11, color: "muted" });
+    }
+  }
+
+  function flowShape(parent, box, type, scale) {
+    var fill = mapColour(type + "-fill");
+    var stroke = mapColour(type + "-line");
+    if (type !== "decision") return flowRect(parent, box, fill, stroke, type === "oval" ? box.h / 2 : 8 * scale);
+    var x = box.x, y = box.y, w = box.w, h = box.h;
+    return svg("polygon", { points: [[x + w / 2, y], [x + w, y + h / 2], [x + w / 2, y + h], [x, y + h / 2]].join(" "),
+      fill: fill, stroke: stroke }, parent);
+  }
+
+  function drawFlowKey(ctx, art, y) {
+    var W = ctx.W.flow;
+    var x = 56;
+    ["oval", "step", "decision", "done", "wrong"].forEach(function (type, i) {
+      var width = i === 4 ? 191 : 114;
+      flowShape(art, flowBox(ctx, { x: x, y: y, w: 15, h: 13 }), type, 0.5);
+      flowText(ctx, art, W[type], { x: x + 22, y: y - 1, w: width - 23, h: 23 }, { size: 11, color: "muted" });
+      x += width;
+    });
+  }
+
+  function drawFlowCards(ctx, art, page) {
+    var W = ctx.W.flow;
+    var compact = page.type === "flow-map";
+    var w = compact ? 216 : 328;
+    var h = compact ? 63 : 112;
+    ["goal", "starts", "ends"].forEach(function (key, i) {
+      var x = 56 + (w + 13) * i;
+      var y = 119;
+      flowRect(art, flowBox(ctx, { x: x, y: y, w: w, h: h }), mapColour("step-fill"), mapColour("step-line"), 9);
+      flowText(ctx, art, W[key], { x: x + 13, y: y + 8, w: w - 26, h: 15 }, { size: 10, weight: 800, color: "step-text" });
+      flowText(ctx, art, q(ctx, page.cards[key]), { x: x + 13, y: y + 22, w: w - 26, h: h - 25 },
+        { size: compact ? 11.5 : 15, leading: compact ? 12.2 : 18, weight: 700, color: "step-text", message: W.fitCards });
+    });
+  }
+
+  function drawPathCheck(ctx, art, page) {
+    var W = ctx.W.flow;
+    var compact = page.type === "flow-map";
+    var frame = compact ? { x: 752, y: 119, w: 314, h: 602 } : { x: 56, y: 252, w: 1010, h: 469 };
+    var x = frame.x + 15, y = frame.y + 16;
+    flowRect(art, flowBox(ctx, frame), mapColour("panel"), mapColour("panel-line"), 12);
+    flowText(ctx, art, W.check, { x: x, y: y, w: frame.w - 30, h: 28 }, { size: 20, weight: 800, color: "panel-ink" });
+    var counts = { steps: flowCount(W.stepCount, page.counts.steps), decisions: flowCount(W.decisionCount, page.counts.decisions),
+      wrongWays: flowCount(W.wrongCount, page.counts.wrongWays) };
+    flowText(ctx, art, F.strings.fill(W.counts, counts), { x: x, y: y + 32, w: frame.w - 30, h: 25 },
+      { size: 12, weight: 600, color: "panel-muted" });
+    var width = compact ? frame.w - 30 : (frame.w - 43) / 2;
+    page.checks.forEach(function (check, i) {
+      var row = compact ? i : Math.floor(i / 2);
+      var col = compact ? 0 : i % 2;
+      var gap = compact ? 9 : 12;
+      var tall = compact ? 131 : 218;
+      var short = compact ? 118 : 150;
+      var y = frame.y + 76 + (row ? tall + gap + (row - 1) * (short + gap) : 0);
+      var x = frame.x + 15 + col * (width + gap);
+      var height = row ? short : tall;
+      var color = check.status === "pass" ? "panel-first" : check.status === "fail" ? "panel-second" : "panel-muted";
+      flowRect(art, flowBox(ctx, { x: x, y: y, w: width, h: height }), mapColour("panel"), mapColour("panel-line"), 8);
+      flowStatus(ctx, art, check.status, color, x + 12, y + 14);
+      flowText(ctx, art, W.questions[i], { x: x + 36, y: y + 12, w: width - 48, h: 38 },
+        { size: compact ? 13 : 15, weight: 800, color: "panel-ink", message: W.fitCheck });
+
+      var detail = check.details.map(function (info) {
+        return F.strings.fill(W[info.key], { ...info, count: flowCount(W.stepCount, info.n) });
+      });
+      if (check.status === "fail" && detail.length > 1) {
+        detail = [detail[0], F.strings.fill(W.more, { n: detail.length - 1 })];
+      }
+      var columns = !compact && detail.length > 6 ? 2 : 1;
+      var perColumn = Math.ceil(detail.length / columns);
+      var textWidth = (width - 28) / columns - (columns === 2 ? 8 : 0);
+      var detailHeight = Math.min(compact ? 50 : 70, (height - 47) / Math.max(perColumn, 1));
+      detail.forEach(function (value, j) {
+        flowText(ctx, art, value, { x: x + 14 + Math.floor(j / perColumn) * (textWidth + 16), y: y + 45 + (j % perColumn) * detailHeight,
+          w: textWidth, h: detailHeight }, { size: compact ? 11.5 : 12.5, leading: 13.5, color: "panel-ink", message: W.fitCheck });
+      });
+    });
+  }
+
+  function flowCount(forms, n) {
+    return F.strings.fill(forms[n === 1 ? 0 : 1], { n: n });
+  }
+
+  function flowStatus(ctx, art, status, color, x, y) {
+    var p = flowBox(ctx, { x: x, y: y, w: 15, h: 15 });
+    var g = svg("g", { transform: "translate(" + p.x + "," + p.y + ")", "aria-hidden": "true" }, art);
+    var path = { pass: "M2 8 L6 12 L13 3", fail: "M3 3 L12 12 M12 3 L3 12", skip: "M3 8 L12 8" };
+    svg("path", { d: path[status], fill: "none", stroke: mapColour(color), "stroke-width": 2, "stroke-linecap": "round",
+      "stroke-linejoin": "round" }, g);
   }
 
   // ---------- device frames, pictures, sketches, markers ----------
@@ -318,7 +562,7 @@
     });
     Promise.all([fonts].concat(pictures)).then(function () {
       frames.forEach(size);
-      var problems = [];
+      var problems = flowFits.map(fitFlow).filter(Boolean);
       Array.prototype.forEach.call(document.querySelectorAll("[data-fit]"), function (node) {
         if (node.scrollHeight > node.clientHeight + 1 || node.scrollWidth > node.clientWidth + 1) {
           problems.push({ line: Number(node.getAttribute("data-fit-line")) || 0, text: node.getAttribute("data-fit") });

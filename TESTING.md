@@ -1,5 +1,25 @@
 # How frameflow was tested
 
+## The flow map and path check (0.5.0, 20 November 2026)
+
+On macOS with Node.js 22.14.0, the suite ran **124 tests**. The default run passed 121 and skipped
+the three native checks. The run with native checks enabled passed all 124.
+Chromium and WebKit each printed 106 A4 landscape sheets across the eight cases below, one sheet per
+storyboard page. All 13 map and check pages in each engine were inspected as pictures.
+
+- Run `node --test` from the repository root. The reader tests cover optional goal cards, decision syntax
+  in English and Arabic, line-numbered refusals and compatibility with earlier text copies. Layout tests
+  check map and screen page order, compact and full-size maps, page bounds, overlap and Arabic mirroring.
+  They also check that a last-screen return reaches End, rows use the available width before wrapping,
+  and connectors stay clear of crossings with at least 10 CSS pixels between parallel runs.
+- The path check tests include a good clinic booking flow and five deliberate problems: an unreachable
+  screen, two answers with the same destination, an error ending a story, a story that only loops and a
+  flow with no error paths. Theme tests check map text against its background on light and dark pages.
+- For print verification, render all five examples and the long-story, clinic demo and five-story fixtures
+  in Chromium and WebKit. Check one A4 landscape sheet per page, look at every map and check page, and
+  inspect arrow routing, label clearance and page edges. Run the WebKit helper with `tools/render-mac.sh`.
+  `FRAMEFLOW_NATIVE_TESTS=1 node --test` also runs the Mac helper's optional automated checks.
+
 ## The first page — 0.4.0, 15 November 2026
 
 The cover's screen is drawn straight and whole, and `- cover:` picks which screen it shows. **73 passed,

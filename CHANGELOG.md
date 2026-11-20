@@ -3,6 +3,16 @@
 All notable changes to this project. The version is `VERSION` in
 `skills/frameflow/assets/template/frameflow/model.js`.
 
+## [0.5.0] - 2026-11-20
+
+### Added
+
+- A flow map and path check after the cover so clients can see the routes through a story and spot
+  unreachable screens, duplicate decision destinations or missing recovery paths before they approve it.
+  Longer flows use full-size map pages and a separate check page.
+- Optional `goal`, `starts` and `ends` settings, plus `?` lines for decisions with two answers, in the
+  same text copy. The food delivery examples show a decision in English and Arabic.
+
 ## [0.4.0] - 2026-11-15
 
 The first page, after the owner ran 0.3.0 on a tablet app whose first screen is a splash: the cover showed

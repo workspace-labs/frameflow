@@ -412,3 +412,94 @@ test("cover picks the screen the cover shows; without it, the very first one", (
   assert.deepEqual(cover("2.1").storyboard.project.cover, { story: 1, screen: 0 });
   for (const bad of ["2", "1.3", "3.1", "0.1", "1.0", "home", "1.2.1", ""]) refusedWith(cover(bad || " "), 3, "cover says which screen");
 });
+
+test("flow-map settings accept 80 characters and refuse longer values on their own lines", () => {
+  for (const key of ["goal", "starts", "ends"]) {
+    const text = "أ".repeat(80);
+    const source = ["## Buy", "1. Home: Sees products."];
+    const result = board(["- " + key + ": " + text, ...source]);
+    assert.deepEqual(result.problems, []);
+    assert.equal(result.storyboard.project.settings[key], text);
+    refusedWith(board(["- " + key + ": " + text + "A", ...source]), 5, "Keep it to 80");
+  }
+});
+
+test("an English decision records two answers without replacing the screen's attachments", () => {
+  const result = board(["## Buy", "1. Home: Sees products.",
+    "   ? Keep shopping?: Yes → 2, No -> end", "   shot: screenshots/home.png",
+    "   ! Offline: Taps Retry. → 1", "2. Basket: Sees the basket."]);
+  assert.deepEqual(result.problems, []);
+  const [home, basket] = result.storyboard.stories[0].screens;
+  assert.deepEqual(home.decision, { question: "Keep shopping?", answers: [{ label: "Yes", to: 2 }, { label: "No", to: "end" }], line: 7 });
+  assert.equal(home.to, null);
+  assert.equal(home.shot, "screenshots/home.png");
+  assert.equal(home.errors[0].name, "Offline");
+  assert.equal(basket.decision, undefined);
+});
+
+test("an Arabic decision accepts the Arabic question mark, comma and digit forms", () => {
+  const result = board(["- language: ar", "## الطلب", "١. الرئيسية: يرى القائمة.",
+    "   ? هل تتابع؟: نعم → ٢، لا -> ۳", "٢. الطلب: يرى الطلب.", "٣. خروج: يرى رسالة الوداع."]);
+  assert.deepEqual(result.problems, []);
+  assert.deepEqual(result.storyboard.stories[0].screens[0].decision,
+    { question: "هل تتابع؟", answers: [{ label: "نعم", to: 2 }, { label: "لا", to: 3 }], line: 8 });
+});
+
+const DECISION = "   ? Keep shopping?: Yes → 2, No → end";
+const DECISION_STORY = ["## Buy", "1. Home: Sees products."];
+const BASKET = "2. Basket: Sees the basket.";
+
+test("a decision and a screen arrow cannot both say where the screen goes", () => {
+  for (const arrow of ["→ 2", "-> end"]) {
+    refusedWith(board(["## Buy", "1. Home: Sees products. " + arrow, DECISION, BASKET]), 7,
+      "the ? line's two answers already say where it goes");
+  }
+});
+
+test("decision answers must go to another screen in the same story or end", () => {
+  for (const target of ["0", "3", "٣"]) {
+    refusedWith(board([...DECISION_STORY, "   ? Continue?: Yes → " + target + ", No → end", BASKET]), 7, "this story has 2 screens");
+  }
+  refusedWith(board([...DECISION_STORY, "   ? Continue?: Yes → ١, No → end", BASKET]), 7, "goes back to its own screen");
+});
+
+test("a decision needs a question mark, a colon and exactly two complete answers", () => {
+  for (const body of ["Keep shopping: Yes → 2, No → end", "Keep shopping? Yes → 2, No → end", "?: Yes → 2, No → end"]) {
+    refusedWith(board([...DECISION_STORY, "   ? " + body, BASKET]), 7, "question mark followed by a colon");
+  }
+  for (const answers of ["Yes → 2", "Yes → 2, No → end, Later → 2", "Yes → 2, No → end,", "Yes → 2, "]) {
+    refusedWith(board([...DECISION_STORY, "   ? Continue?: " + answers, BASKET]), 7, "exactly two answers");
+  }
+  for (const answer of ["No", "→ end", "No → later", "No → possibly → end"]) {
+    refusedWith(board([...DECISION_STORY, "   ? Continue?: Yes → 2, " + answer, BASKET]), 7, "label followed by → and a screen number or end");
+  }
+});
+
+test("a decision's question and each answer label have their own character limits", () => {
+  const question = "W".repeat(31) + "?";
+  const label = "Y".repeat(12);
+  assert.deepEqual(board([...DECISION_STORY, "   ? " + question + ": " + label + " → 2, No → end", BASKET]).problems, []);
+  refusedWith(board([...DECISION_STORY, "   ? W" + question + ": Yes → 2, No → end", BASKET]), 7, "Keep it to 32");
+  refusedWith(board([...DECISION_STORY, "   ? Continue?: Yes → 2, N" + label + " → end", BASKET]), 7, "Keep it to 12");
+});
+
+test("a decision must follow its screen, before attachments, and occurs only once", () => {
+  refusedWith(board(["## Buy", DECISION, "1. Home: Sees products.", BASKET]), 6, "must sit under the screen");
+  refusedWith(board([...DECISION_STORY, DECISION, DECISION, BASKET]), 8, "already has a ? line");
+  refusedWith(board([...DECISION_STORY, "   ? Hold on", DECISION, BASKET]), 8, "already has a ? line");
+  for (const attachment of ["shot: a.png", "shot:", "phone-shot: a.png", "tap: 0, 0", "look: 0, 0", "! Offline: Taps Retry. → 1", "! Offline"]) {
+    refusedWith(board([...DECISION_STORY, "   " + attachment, DECISION, BASKET]), 8, "before any !, shot:");
+  }
+});
+
+test("existing example and fixture copies still parse without decision syntax", () => {
+  const fixtures = path.join(__dirname, "fixtures");
+  const files = [path.join(fixtures, "long-story.md"), path.join(fixtures, "after-build/app-flow.md"),
+    ...fs.readdirSync(EXAMPLES).filter((f) => f.endsWith(".md")).map((f) => path.join(EXAMPLES, f))];
+  for (const file of files) {
+    const originalSyntax = fs.readFileSync(file, "utf8").split("\n").filter((line) => !/^\s+\?|^- goal:/.test(line)).join("\n");
+    const result = parse(originalSyntax);
+    assert.deepEqual(result.problems, [], file);
+    assert.ok(result.storyboard.stories.every((story) => story.screens.every((screen) => screen.decision === undefined)), file);
+  }
+});

@@ -42,6 +42,68 @@
     }).join("");
   }
 
+  function hue(colour) {
+    var channels = rgb(colour);
+    var r = channels[0], g = channels[1], b = channels[2];
+    var high = Math.max(r, g, b);
+    var span = high - Math.min(r, g, b);
+    if (span === 0) return null;
+    var sector;
+    if (high === r) sector = (g - b) / span;
+    else if (high === g) sector = 2 + (b - r) / span;
+    else sector = 4 + (r - g) / span;
+    return (sector * 60 + 360) % 360;
+  }
+
+  function nearRed(accent, red) {
+    var accentHue = hue(accent);
+    if (accentHue === null) return false;
+    var distance = Math.abs(accentHue - hue(red));
+    return Math.min(distance, 360 - distance) <= 40;
+  }
+
+  function mapColours(t) {
+    var bg = t.bg, acc = t.acc, ink = t.ink, red = t.red, dark = t.dark;
+    var first = dark ? "#4ade80" : mix("#15803d", ink, 0.7);
+    var second = dark ? red : mix(red, ink, 0.7);
+    var neutral = nearRed(acc, red);
+    var neutralFill = mix(ink, bg, 0.08);
+    var neutralLine = mix(ink, bg, 0.3);
+    var panel = neutral ? neutralFill : mix(acc, bg, 0.05);
+    var step = neutral ? neutralFill : mix(acc, bg, 0.14);
+    var oval = neutral ? neutralFill : mix(acc, bg, 0.26);
+    var wrong = mix(red, bg, 0.14);
+    var decision = dark ? mix("#f5c542", bg, 0.3) : "#fde68a";
+    var done = dark ? mix("#4ade80", bg, 0.22) : "#cdefd9";
+
+    // Midtone stages can make the original document ink unreadable on some tints.
+    // Adjust map text toward ink when it passes, otherwise toward the higher-contrast endpoint.
+    function readable(text, fill) {
+      if (contrast(text, fill) >= 4.5) return text;
+      var endpoint = ink;
+      if (contrast(ink, fill) < 4.5) {
+        endpoint = contrast("#000000", fill) >= contrast("#ffffff", fill) ? "#000000" : "#ffffff";
+      }
+      for (var weight = 7; weight > 0; weight--) {
+        var adjusted = mix(text, endpoint, weight / 10);
+        if (contrast(adjusted, fill) >= 4.5) return adjusted;
+      }
+      return endpoint;
+    }
+
+    return {
+      "step-fill": step, "step-line": neutral ? neutralLine : mix(acc, bg, 0.45), "step-text": readable(ink, step),
+      "oval-fill": oval, "oval-line": neutral ? neutralLine : mix(acc, bg, 0.55), "oval-text": readable(ink, oval),
+      "wrong-fill": wrong, "wrong-line": mix(red, bg, 0.5), "wrong-text": readable(second, wrong),
+      "decision-fill": decision, "decision-line": dark ? "#f5c542" : "#e3be3e", "decision-text": readable(dark ? ink : "#5b4300", decision),
+      "done-fill": done, "done-line": dark ? "#4ade80" : "#86cfa2", "done-text": readable(dark ? ink : "#14532d", done),
+      first: readable(first, bg), second: readable(second, bg),
+      ink: readable(ink, bg), muted: readable(t.mute, bg),
+      panel: panel, "panel-line": neutral ? neutralLine : t.line, "panel-ink": readable(ink, panel), "panel-muted": readable(t.mute, panel),
+      "panel-first": readable(first, panel), "panel-second": readable(second, panel)
+    };
+  }
+
   /* Every colour the page uses. stage and accent are 6-digit hex (or empty for frameflow's own). */
   function theme(stage, accent) {
     var bg = hex(stage) || DEFAULT.stage;
@@ -49,7 +111,7 @@
     var dark = luminance(bg) < 0.4;
     var ink = dark ? "#eef1f3" : "#15171c";
     var red = dark ? "#ff6b5e" : "#d92d20";
-    return {
+    var colours = {
       dark: dark, bg: bg, ink: ink, acc: acc, red: red,
       mute: mix(ink, bg, 0.52),
       line: mix(ink, bg, 0.12),
@@ -63,6 +125,8 @@
       accRgb: rgb(acc).join(", "),
       redRgb: rgb(red).join(", ")
     };
+    colours.map = mapColours(colours);
+    return colours;
   }
 
   var api = { DEFAULT: DEFAULT, MIN_CONTRAST: MIN_CONTRAST, hex: hex, luminance: luminance, contrast: contrast, mix: mix, theme: theme };
